@@ -45,7 +45,7 @@ export default function EditRecordPage({ params }: { params: { zoneId: string; r
       qc.invalidateQueries({ queryKey: ["records", zoneId] });
       qc.invalidateQueries({ queryKey: ["zone", zoneId] });
       qc.setQueryData(["record", zoneId, recordId], r);
-      notify({ type: "success", content: `Record ${r.name} (${r.type}) was successfully updated.` });
+      notify({ type: "success", content: `Record ${displayName(r.name)} (${r.type}) was successfully updated.` });
       router.push(`/route53/v2/hostedzones/${zoneId}`);
     },
   });
