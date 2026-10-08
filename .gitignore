@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+backend/data/
+*.db
+*.db-wal
+*.db-shm
+
+# Node
+node_modules/
+.next/
+*.tsbuildinfo
+
+# Env / OS
+.env
+.env.local
+.DS_Store
+e2e/screenshots/
+
+# Private reference files (assignment brief, resume)
+private/*
+!private/README.md
+
+# Local working notes, kept out of the repo
+CLAUDE.md
+STATE.md
+docs/agent/
