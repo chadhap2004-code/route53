@@ -33,9 +33,11 @@ A working clone of the AWS Route 53 console for managing hosted zones and DNS re
 | **Bonus:** keyboard shortcuts | <kbd>Alt</kbd>+<kbd>S</kbd> top-bar search · <kbd>/</kbd> table search · <kbd>c</kbd> create · <kbd>g</kbd> <kbd>h</kbd> hosted zones · <kbd>g</kbd> <kbd>d</kbd> dashboard · <kbd>t</kbd> theme · <kbd>?</kbd> help | Ignored while typing |
 | **Bonus:** bulk operations | Zone page → tick several records → **Delete records** | One atomic change batch: all are deleted or none. **Create record** → **Add another record** creates several at once |
 | Record details panel | Zone page → tick one record | Opens at the bottom; the gear switches it to the side |
+| Dashboard | Left nav → **Dashboard** | Same sections as the console. The "Try the bonus features" tip can be dismissed |
+| Sign-up | Sign-in page → **New here? Create account** | Email and account name, then a password. The new account gets its own copy of the demo zones |
 | CI/CD | [CI/CD](#cicd) | GitHub Actions on every push; Railway and Vercel deploy from `main` |
 
-**Scope.** Hosted zones and DNS records are fully working. Traffic policies (a visual policy editor in the real console), Resolver, Profiles, Health checks, Domains and DNS Firewall are "Coming soon" placeholders, as the brief allows.
+**Scope.** Hosted zones and DNS records are fully working. The **Dashboard** copies the console's layout (the hosted zone count is live, the rest is static) and **Health checks** shows the console's empty list. Traffic policies (a visual policy editor in the real console), Resolver, Profiles, Domains and DNS Firewall are "Coming soon" placeholders, as the brief allows.
 
 **Branding.** This is a demo clone, **not affiliated with AWS**. Console pages show a simple hand-drawn "aws" logo with a "Demo clone" badge, where the real console has its logo. The sign-in and sign-up pages carry no AWS logo or AWS wording, because a public page that imitates the AWS sign-in can be flagged as phishing and taken down.
 
@@ -51,6 +53,7 @@ I focused on two things:
 ## Contents
 
 - [Features](#features)
+- [Assignment checklist](#assignment-checklist)
 - [Running locally](#running-locally)
 - [Architecture](#architecture)
 - [Database schema](#database-schema)
@@ -73,7 +76,7 @@ I focused on two things:
 | **Records** | A, AAAA, CNAME, TXT, MX, NS, PTR, SRV and CAA, plus editing the zone's SOA/NS. List, search by name **or value**, filter by type / routing policy / alias, sort and paginate. Create several records at once ("Add another record"), edit, and delete one or many. |
 | **Routing** | Simple and Weighted (weight + record ID), plus Alias records. |
 | **Console UX** | Route 53 navigation and breadcrumbs, record details split panel, Flashbar notifications showing the change ID, confirmation modals (type `delete`), column and page-size preferences, empty states. |
-| **Placeholders** | Dashboard (shows zone count), Health checks, Traffic policies, Resolver, Profiles, Domains and DNS Firewall, all as "Coming soon" pages. |
+| **Mocked sections** | Dashboard laid out like the console's (live hosted zone count; register domain, notifications and service health are static). Health checks as the console's empty list. Traffic policies, Resolver, Profiles, Domains and DNS Firewall as "Coming soon" pages. |
 | **Bonus** | BIND zone-file import with a server-side **preview**; export as BIND or Route 53 JSON; dark mode; keyboard shortcuts; bulk delete. |
 
 <details>
@@ -87,6 +90,29 @@ I focused on two things:
 </details>
 
 **Keyboard shortcuts:** `Alt+S` top-bar search · `/` table search · `c` create · `g h` hosted zones · `g d` dashboard · `t` dark mode · `?` help
+
+---
+
+## Assignment checklist
+
+Every item in the brief, and where to see it.
+
+| Brief item | Where |
+|---|---|
+| Next.js (TypeScript), FastAPI, SQLite | `frontend/`, `backend/`, `backend/app/schema.sql` |
+| Mocked login, logout, session persistence | `/login` → user menu (top right) → **Sign out**; refresh any page and you stay signed in |
+| IAM / accounts mocked | Each user has a mocked 12-digit account ID; **Create account** makes a new isolated account |
+| Hosted zones: view, search, create, edit, delete | **Hosted zones** page: table, filter bar, **Create hosted zone**, **Edit**, **Delete** |
+| Records: A, AAAA, CNAME, TXT, MX, NS, PTR, SRV, CAA | Zone page → **Create record** → **Record type** |
+| Records: view, search, create, edit, delete | Zone page: records table, filter bar, **Create record**, **Edit record**, **Delete record** |
+| Everything persists in SQLite | Refresh, or sign out and back in: changes are still there |
+| Navigation structure | Left navigation with the console's sections, breadcrumbs, top bar |
+| Tables, forms, search, filters, pagination | Both tables: sorting, filters, page size and column preferences, pagination |
+| Modals, notifications | Delete zone / delete records / reset demo data modals; green, blue and red Flashbar messages |
+| Mocked sections: Dashboard, Traffic policies, Health checks, Resolver, Profiles | Left navigation |
+| Bonus: BIND import, BIND/JSON export, dark mode, keyboard shortcuts, bulk operations | See [Where to find each feature](#where-to-find-each-feature) |
+| README: setup, architecture, schema, API | [Running locally](#running-locally), [Architecture](#architecture), [Database schema](#database-schema), [API overview](#api-overview) |
+| Hosted demo | https://route53-nu.vercel.app |
 
 ---
 
@@ -231,7 +257,7 @@ Error codes used: `NotAuthenticated`, `InvalidCredentials`, `EmailTaken`, `NoSuc
 ## Testing
 
 ```bash
-cd backend && pytest -q          # 97 tests: validators, API rules, import/export round trip
+cd backend && pytest -q          # 99 tests: validators, API rules, import/export round trip
 cd frontend && npm run typecheck && npm run lint && npm run build
 ```
 
@@ -281,7 +307,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md). In short: the **backend runs on Railway** wi
 
 ## Limitations and next steps
 
-- No real DNS resolution. Health checks, traffic policies, DNSSEC and query logging are placeholders. The next feature I'd build is the console's **Test record** tool: a resolver over the stored records with wildcard matching and CNAME chasing.
+- No real DNS resolution. Health checks (an empty list), traffic policies, DNSSEC and query logging are placeholders. The next feature I'd build is the console's **Test record** tool: a resolver over the stored records with wildcard matching and CNAME chasing.
 - Only Simple and Weighted routing. Latency, failover, geolocation and multivalue would extend `routing_policy` plus a few extra columns.
 - SQLite allows a single writer, so the backend runs one process. For several instances I'd move to Postgres. The SQL is mostly portable apart from the PRAGMAs and `BEGIN IMMEDIATE`.
 - TypeScript types are maintained by hand to match the Pydantic models. Generating them from the OpenAPI schema (`openapi-typescript`) would remove that drift risk.
