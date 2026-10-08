@@ -63,3 +63,35 @@ kbd {
   color: #8d99a8;
   pointer-events: none;
 }
+
+/* "Current user settings" panel under the gear icon (components/SettingsPanel.tsx). The colours match the
+   top bar's dropdowns; the Cloudscape components inside get theirs from awsui-context-top-navigation. */
+.settings-panel {
+  position: fixed;
+  z-index: 2000;
+  max-width: calc(100vw - 16px);
+  box-sizing: border-box;
+  background: #1b232d;
+  border: 1px solid #424650;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 7, 22, 0.35);
+  outline: none;
+}
+
+.settings-panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #424650;
+}
+
+.settings-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px 20px 20px;
+}
+
+.settings-panel-footer {
+  margin: 0 20px;
+  padding: 14px 0 16px;
+  border-top: 1px solid #424650;
+}

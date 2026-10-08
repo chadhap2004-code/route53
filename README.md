@@ -15,7 +15,7 @@ A working clone of the AWS Route 53 console for managing hosted zones and DNS re
 5. **Import zone file** → **Insert sample** → **Preview** → **Import 6 records**.
 6. **Export** ▾ → **BIND zone file** (or **JSON**) to download the zone.
 7. Go back to **Hosted zones**, select **example.test** → **Delete**. The modal explains the zone still has records.
-8. Press <kbd>t</kbd> for dark mode and <kbd>?</kbd> for the keyboard shortcuts.
+8. Open the **gear icon** (top bar) → **Visual mode** → **Dark** (or press <kbd>t</kbd>), and press <kbd>?</kbd> for the keyboard shortcuts.
 9. When you're done: **Demo account** (top right) → **Reset demo data** → **Reset**.
 
 ### Where to find each feature
@@ -29,7 +29,7 @@ A working clone of the AWS Route 53 console for managing hosted zones and DNS re
 | **Notifications** (Flashbar) | Top of the page after any create, edit, delete or import | Green on success (record changes show the change ID, e.g. `C2682N5HXP0BZ4`); blue for info (try **Test record**). Validation errors show in red inside the form |
 | **Bonus:** import BIND zone file | Zone page → **Import zone file** | Upload or paste a file, **Preview** (nothing is saved), then **Import** |
 | **Bonus:** export BIND / JSON | Zone page → **Export** ▾ | BIND zone file or Route 53 JSON |
-| **Bonus:** dark mode | Press <kbd>t</kbd>, or **Demo account** → **Switch to dark mode** | Remembered per browser |
+| **Bonus:** dark mode | **Gear icon** (top bar) → **Current user settings** → **Visual mode**: Browser default, Light or Dark. <kbd>t</kbd> switches light/dark | Remembered per browser and applied before the page draws. *Browser default* follows the operating system's setting. Language is shown but not available |
 | **Bonus:** keyboard shortcuts | <kbd>Alt</kbd>+<kbd>S</kbd> top-bar search · <kbd>/</kbd> table search · <kbd>c</kbd> create · <kbd>g</kbd> <kbd>h</kbd> hosted zones · <kbd>g</kbd> <kbd>d</kbd> dashboard · <kbd>t</kbd> theme · <kbd>?</kbd> help | Ignored while typing |
 | **Bonus:** bulk operations | Zone page → tick several records → **Delete records** | One atomic change batch: all are deleted or none. **Create record** → **Add another record** creates several at once |
 | Record details panel | Zone page → tick one record | Opens at the bottom; the gear switches it to the side |
@@ -77,7 +77,7 @@ I focused on two things:
 | **Routing** | Simple and Weighted (weight + record ID), plus Alias records. |
 | **Console UX** | Route 53 navigation and breadcrumbs, record details split panel, Flashbar notifications showing the change ID, confirmation modals (type `delete`), column and page-size preferences, empty states. |
 | **Mocked sections** | Dashboard laid out like the console's (live hosted zone count; register domain, notifications and service health are static). Health checks as the console's empty list. Traffic policies, Resolver, Profiles, Domains and DNS Firewall as "Coming soon" pages. |
-| **Bonus** | BIND zone-file import with a server-side **preview**; export as BIND or Route 53 JSON; dark mode; keyboard shortcuts; bulk delete. |
+| **Bonus** | BIND zone-file import with a server-side **preview**; export as BIND or Route 53 JSON; dark mode (Light / Dark / Browser default); keyboard shortcuts; bulk delete. |
 
 <details>
 <summary>More screenshots</summary>
@@ -89,7 +89,7 @@ I focused on two things:
 
 </details>
 
-**Keyboard shortcuts:** `Alt+S` top-bar search · `/` table search · `c` create · `g h` hosted zones · `g d` dashboard · `t` dark mode · `?` help
+**Keyboard shortcuts:** `Alt+S` top-bar search · `/` table search · `c` create · `g h` hosted zones · `g d` dashboard · `t` light/dark · `?` help
 
 ---
 

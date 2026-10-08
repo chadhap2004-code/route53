@@ -2,7 +2,7 @@
 // Global keyboard shortcuts. Ignored while typing in an input so they never steal keystrokes.
 //   /      focus the page's search box        c   create (zone or record, depending on page)
 //   g h    go to hosted zones                 g d go to dashboard
-//   t      toggle dark mode                   ?   show this help
+//   t      switch light / dark mode           ?   show this help
 import Box from "@cloudscape-design/components/box";
 import Modal from "@cloudscape-design/components/modal";
 import Table from "@cloudscape-design/components/table";
@@ -16,7 +16,7 @@ const SHORTCUTS = [
   { keys: ["c"], action: "Create (hosted zone or record on the current page)" },
   { keys: ["g", "h"], action: "Go to Hosted zones" },
   { keys: ["g", "d"], action: "Go to Dashboard" },
-  { keys: ["t"], action: "Toggle dark mode" },
+  { keys: ["t"], action: "Switch between light and dark mode (gear icon → Visual mode has all options)" },
   { keys: ["?"], action: "Show keyboard shortcuts" },
   { keys: ["Esc"], action: "Close dialog" },
 ];

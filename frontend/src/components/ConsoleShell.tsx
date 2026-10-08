@@ -13,8 +13,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { api, errorMessage } from "@/lib/api";
 import { ShortcutsModal, useGlobalShortcuts } from "./KeyboardShortcuts";
+import SettingsPanel from "./SettingsPanel";
 import { useNotifications } from "./Notifications";
-import { useTheme } from "./Theme";
 
 // Simple hand-drawn console logo: "aws" text with a smile-style arrow.
 // Drawn here as SVG (nothing downloaded from amazon.com); sign-in and sign-up pages stay unbranded.
@@ -47,8 +47,9 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { notify } = useNotifications();
-  const { dark, toggle } = useTheme();
   const [help, setHelp] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const closeSettings = useCallback(() => setSettingsOpen(false), []);
   const [search, setSearch] = useState("");
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
@@ -84,8 +85,6 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
       await api.logout().catch(() => undefined);
       queryClient.clear();
       router.replace("/login");
-    } else if (id === "theme") {
-      toggle();
     } else if (id === "shortcuts") {
       setHelp(true);
     } else if (id === "reset") {
@@ -141,7 +140,7 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
             { type: "button", iconName: "command-prompt", ariaLabel: "CloudShell", title: "CloudShell", onClick: () => notAvailable("CloudShell") },
             { type: "button", iconName: "notification", ariaLabel: "Notifications", title: "Notifications", onClick: () => notAvailable("Console notifications") },
             { type: "button", iconSvg: helpIcon, ariaLabel: "Help and keyboard shortcuts", title: "Help and keyboard shortcuts (?)", onClick: () => setHelp(true) },
-            { type: "button", iconName: "settings", ariaLabel: "Settings", title: "Settings", onClick: () => notAvailable("Console settings") },
+            { type: "button", iconName: "settings", ariaLabel: "Settings", title: "Settings", onClick: () => setSettingsOpen((open) => !open) },
             {
               type: "menu-dropdown",
               text: "Global",
@@ -158,7 +157,6 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
               iconName: "user-profile",
               onItemClick: (e) => onMenu(e.detail.id),
               items: [
-                { id: "theme", text: dark ? "Switch to light mode" : "Switch to dark mode" },
                 { id: "shortcuts", text: "Keyboard shortcuts" },
                 // Only the shared demo account has seed data to restore; other accounts own their zones.
                 ...(me.data?.is_demo ? [{ id: "reset", text: "Reset demo data" }] : []),
@@ -172,6 +170,7 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
       </div>
       {children}
       <ShortcutsModal visible={help} onDismiss={() => setHelp(false)} />
+      {settingsOpen && <SettingsPanel onClose={closeSettings} />}
       {confirmReset && (
         <Modal
           visible

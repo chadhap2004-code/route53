@@ -20,6 +20,7 @@ const TITLES: Record<string, string> = {
   recoverycontroller: "Application Recovery Controller",
   "firewall/rulegroups": "DNS Firewall rule groups",
   "firewall/domainlists": "DNS Firewall domain lists",
+  settings: "User settings",
 };
 
 export default function Placeholder({ params }: { params: { slug: string[] } }) {
