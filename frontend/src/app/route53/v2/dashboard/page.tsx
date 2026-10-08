@@ -22,6 +22,7 @@ import { useState, type ReactNode } from "react";
 import ConsoleLayout, { route53Crumb } from "@/components/ConsoleLayout";
 import { useNotifications } from "@/components/Notifications";
 import { api } from "@/lib/api";
+import { readPref, writePref } from "@/lib/storage";
 import { useFollow } from "@/lib/useFollow";
 
 const DOCS = "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Welcome.html";
@@ -56,6 +57,9 @@ export default function DashboardPage() {
   const zones = useQuery({ queryKey: ["zones", "count"], queryFn: () => api.listZones({ page_size: 1 }) });
   const [domain, setDomain] = useState("");
   const [notificationFilter, setNotificationFilter] = useState("");
+  // The console has no such banner, so it can be closed for good. Console pages render only in the
+  // browser (ConsoleShell), so reading localStorage here can't cause a hydration mismatch.
+  const [showTips, setShowTips] = useState(() => !readPref("r53.dashboard.tipsDismissed", false));
 
   return (
     <ConsoleLayout breadcrumbs={[route53Crumb, { text: "Dashboard", href: "/route53/v2/dashboard" }]}>
@@ -74,10 +78,21 @@ export default function DashboardPage() {
         }
       >
         <SpaceBetween size="l">
-          <Alert type="info" header="Try the bonus features">
-            Open a hosted zone to <b>Import zone file</b> or <b>Export</b> it as BIND or JSON. Press <kbd>?</kbd> for
-            keyboard shortcuts and <kbd>t</kbd> for dark mode.
-          </Alert>
+          {showTips && (
+            <Alert
+              type="info"
+              header="Try the bonus features"
+              dismissible
+              dismissAriaLabel="Dismiss"
+              onDismiss={() => {
+                setShowTips(false);
+                writePref("r53.dashboard.tipsDismissed", true);
+              }}
+            >
+              Open a hosted zone to <b>Import zone file</b> or <b>Export</b> it as BIND or JSON. Press <kbd>?</kbd> for
+              keyboard shortcuts and <kbd>t</kbd> for dark mode.
+            </Alert>
+          )}
 
           <Container>
             <ColumnLayout columns={4}>
