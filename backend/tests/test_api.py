@@ -61,6 +61,17 @@ def test_tag_only_edit_updates_timestamp(client, zone):
     assert r.status_code == 200 and r.json()["updated_at"] > zone["updated_at"]
 
 
+def test_zone_tags_are_replaced_and_keys_must_be_unique(client, zone):
+    zid = zone["id"]
+    r = client.patch(f"/api/hosted-zones/{zid}", json={"tags": [{"key": "env", "value": "dev"}, {"key": "team", "value": "a"}]})
+    assert r.status_code == 200 and [t["key"] for t in r.json()["tags"]] == ["env", "team"]
+    r = client.patch(f"/api/hosted-zones/{zid}", json={"tags": [{"key": "owner", "value": "me"}]})
+    assert r.json()["tags"] == [{"key": "owner", "value": "me"}]  # the list is replaced, not merged
+    r = client.patch(f"/api/hosted-zones/{zid}", json={"tags": [{"key": "a", "value": "1"}, {"key": "a", "value": "2"}]})
+    assert r.status_code == 400 and r.json()["error"]["code"] == "InvalidInput"
+    assert client.get(f"/api/hosted-zones/{zid}").json()["tags"] == [{"key": "owner", "value": "me"}]
+
+
 def test_invalid_zone_name(client):
     r = client.post("/api/hosted-zones", json={"name": "bad..name"})
     assert r.status_code == 400 and r.json()["error"]["code"] == "InvalidDomainName"
