@@ -12,13 +12,12 @@ import ExpandableSection from "@cloudscape-design/components/expandable-section"
 import Header from "@cloudscape-design/components/header";
 import KeyValuePairs from "@cloudscape-design/components/key-value-pairs";
 import Pagination from "@cloudscape-design/components/pagination";
-import Select from "@cloudscape-design/components/select";
+import PropertyFilter from "@cloudscape-design/components/property-filter";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Spinner from "@cloudscape-design/components/spinner";
 import SplitPanel from "@cloudscape-design/components/split-panel";
 import Table, { type TableProps } from "@cloudscape-design/components/table";
 import Tabs from "@cloudscape-design/components/tabs";
-import TextFilter from "@cloudscape-design/components/text-filter";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -28,20 +27,24 @@ import DeleteZoneModal from "@/components/DeleteZoneModal";
 import { useNotifications } from "@/components/Notifications";
 import RecordDetails from "@/components/RecordDetails";
 import { api, errorMessage } from "@/lib/api";
-import { RECORD_TYPE_FILTER_OPTIONS, displayName, formatDate, routingLabel } from "@/lib/dns";
+import { RECORD_TYPES, displayName, formatDate, routingLabel } from "@/lib/dns";
+import { EMPTY_QUERY, PROPERTY_FILTER_I18N, cleanQuery, tokenValue } from "@/lib/propertyFilter";
 import { readPref, writePref } from "@/lib/storage";
 import type { HostedZone, RecordSet } from "@/lib/types";
-import { useDebounced } from "@/lib/useDebounced";
 
-const ROUTING_FILTER = [
-  { value: "", label: "Routing policy" },
-  { value: "simple", label: "Simple" },
-  { value: "weighted", label: "Weighted" },
+// Free text searches record names and values. Type and routing policy are filtered by the API;
+// Alias is filtered on the current page only (see the README limitations).
+const FILTERING_PROPERTIES = [
+  { key: "type", propertyLabel: "Type", groupValuesLabel: "Type values", operators: ["="] as const },
+  { key: "routing", propertyLabel: "Routing policy", groupValuesLabel: "Routing policy values", operators: ["="] as const },
+  { key: "alias", propertyLabel: "Alias", groupValuesLabel: "Alias values", operators: ["="] as const },
 ];
-const ALIAS_FILTER = [
-  { value: "", label: "Alias" },
-  { value: "yes", label: "Alias: Yes" },
-  { value: "no", label: "Alias: No" },
+const FILTERING_OPTIONS = [
+  ...[...RECORD_TYPES.map((t) => t.value), "SOA"].map((value) => ({ propertyKey: "type", value })),
+  { propertyKey: "routing", value: "Simple" },
+  { propertyKey: "routing", value: "Weighted" },
+  { propertyKey: "alias", value: "Yes" },
+  { propertyKey: "alias", value: "No" },
 ];
 
 const COLUMN_IDS = ["name", "type", "routing", "differentiator", "alias", "value", "ttl", "health", "evaluate", "recordId"];
@@ -97,17 +100,17 @@ function RecordsTable({
   setSelected: (r: RecordSet[]) => void;
 }) {
   const router = useRouter();
-  const [filter, setFilter] = useState("");
-  const [type, setType] = useState(RECORD_TYPE_FILTER_OPTIONS[0]);
-  const [routing, setRouting] = useState(ROUTING_FILTER[0]);
-  const [alias, setAlias] = useState(ALIAS_FILTER[0]);
+  const [filterQuery, setFilterQuery] = useState(EMPTY_QUERY);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [visible, setVisible] = useState<string[]>(DEFAULT_VISIBLE);
   const [wrapLines, setWrapLines] = useState(false);
   const [sorting, setSorting] = useState<{ field?: string; desc: boolean }>({ desc: false });
   const [deleting, setDeleting] = useState<RecordSet[] | null>(null);
-  const q = useDebounced(filter);
+  const q = tokenValue(filterQuery);
+  const type = tokenValue(filterQuery, "type");
+  const routing = tokenValue(filterQuery, "routing").toLowerCase(); // the API takes "simple" / "weighted"
+  const alias = tokenValue(filterQuery, "alias");
 
   useEffect(() => {
     setPageSize(readPref("r53.records.pageSize", 50));
@@ -117,12 +120,12 @@ function RecordsTable({
   useEffect(() => setPage(1), [q, type, routing, alias, pageSize, sorting]);
 
   const query = useQuery({
-    queryKey: ["records", zone.id, { q, type: type.value, routing: routing.value, page, pageSize, sorting }],
+    queryKey: ["records", zone.id, { q, type, routing, page, pageSize, sorting }],
     queryFn: () =>
       api.listRecords(zone.id, {
         q,
-        type: type.value,
-        routing_policy: routing.value,
+        type,
+        routing_policy: routing,
         page,
         page_size: pageSize,
         sort: sorting.field,
@@ -133,10 +136,10 @@ function RecordsTable({
 
   // Alias is a cheap client-side filter on the current page (the server already filtered the rest).
   const items = (query.data?.items ?? []).filter((r) =>
-    alias.value === "yes" ? !!r.alias_target : alias.value === "no" ? !r.alias_target : true,
+    alias === "Yes" ? !!r.alias_target : alias === "No" ? !r.alias_target : true,
   );
   const total = query.data?.total ?? 0;
-  const filtered = !!(q || type.value || routing.value || alias.value);
+  const filtered = filterQuery.tokens.length > 0;
 
   const columns: TableProps.ColumnDefinition<RecordSet>[] = [
     { id: "name", header: "Record name", sortingField: "name", cell: (r) => displayName(r.name), isRowHeader: true },
@@ -203,20 +206,20 @@ function RecordsTable({
           </Header>
         }
         filter={
-          <SpaceBetween direction="horizontal" size="xs">
-            <div data-shortcut="search" style={{ minWidth: 280 }}>
-              <TextFilter
-                filteringText={filter}
-                filteringPlaceholder="Filter records by name or value"
-                filteringAriaLabel="Filter records"
-                countText={q && !query.isError ? `${total} match${total === 1 ? "" : "es"}` : undefined}
-                onChange={(e) => setFilter(e.detail.filteringText)}
-              />
-            </div>
-            <Select selectedOption={type} options={RECORD_TYPE_FILTER_OPTIONS} onChange={(e) => setType(e.detail.selectedOption as typeof type)} ariaLabel="Filter by type" />
-            <Select selectedOption={routing} options={ROUTING_FILTER} onChange={(e) => setRouting(e.detail.selectedOption as typeof routing)} ariaLabel="Filter by routing policy" />
-            <Select selectedOption={alias} options={ALIAS_FILTER} onChange={(e) => setAlias(e.detail.selectedOption as typeof alias)} ariaLabel="Filter by alias" />
-          </SpaceBetween>
+          <div data-shortcut="search">
+            <PropertyFilter
+              query={filterQuery}
+              onChange={(e) => setFilterQuery(cleanQuery(e.detail, FILTERING_OPTIONS))}
+              filteringProperties={FILTERING_PROPERTIES}
+              filteringOptions={FILTERING_OPTIONS}
+              filteringPlaceholder="Filter records by property or value"
+              filteringAriaLabel="Filter records"
+              countText={filtered && !query.isError ? `${alias ? items.length : total} match${(alias ? items.length : total) === 1 ? "" : "es"}` : undefined}
+              hideOperations
+              expandToViewport
+              i18nStrings={PROPERTY_FILTER_I18N}
+            />
+          </div>
         }
         pagination={
           <Pagination
@@ -262,18 +265,7 @@ function RecordsTable({
               <SpaceBetween size="xs">
                 <b>{filtered ? "No matches" : "No records"}</b>
                 <Box color="inherit">{filtered ? "No records match the filter." : "This hosted zone has no records."}</Box>
-                {filtered && (
-                  <Button
-                    onClick={() => {
-                      setFilter("");
-                      setType(RECORD_TYPE_FILTER_OPTIONS[0]);
-                      setRouting(ROUTING_FILTER[0]);
-                      setAlias(ALIAS_FILTER[0]);
-                    }}
-                  >
-                    Clear filters
-                  </Button>
-                )}
+                {filtered && <Button onClick={() => setFilterQuery(EMPTY_QUERY)}>Clear filters</Button>}
               </SpaceBetween>
             )}
           </Box>

@@ -72,8 +72,8 @@ I focused on two things:
 | Area | What works |
 |---|---|
 | **Auth (mocked)** | Two-step sign-in (email or username, then password) and two-step sign-up (email and account name, then password), logout, and a session that survives a refresh. A new account gets its own 12-digit account ID, its own copy of the demo zones, and its name in the top bar. Sessions live server-side (SQLite) behind an HttpOnly cookie. Middleware sends you to `/login` without a session, and from `/login` or `/signup` to the console with one. |
-| **Hosted zones** | List, search (name / ID / description), filter by type, sort, paginate, create (public or private with a VPC, plus tags), edit (description and tags; the name can't change), and delete (blocked while the zone still has records). |
-| **Records** | A, AAAA, CNAME, TXT, MX, NS, PTR, SRV and CAA, plus editing the zone's SOA/NS. List, search by name **or value**, filter by type / routing policy / alias, sort and paginate. Create several records at once ("Add another record"), edit, and delete one or many. |
+| **Hosted zones** | List, search (name / ID / description) and filter by type in one "Filter by property or value" bar, sort, paginate, create (public or private with a VPC, plus tags), edit (description and tags; the name can't change), and delete (blocked while the zone still has records). |
+| **Records** | A, AAAA, CNAME, TXT, MX, NS, PTR, SRV and CAA, plus editing the zone's SOA/NS. List, search by name **or value**, filter by type / routing policy / alias in the console's "Filter by property or value" bar, sort and paginate. Create several records at once ("Add another record"), edit, and delete one or many. |
 | **Routing** | Simple and Weighted (weight + record ID), plus Alias records. |
 | **Console UX** | Route 53 navigation and breadcrumbs, record details split panel, Flashbar notifications showing the change ID, confirmation modals (type `delete`), column and page-size preferences, empty states. |
 | **Mocked sections** | Dashboard laid out like the console's (live hosted zone count; register domain, notifications and service health are static). Health checks as the console's empty list. Traffic policies, Resolver, Profiles, Domains and DNS Firewall as "Coming soon" pages. |
@@ -311,7 +311,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md). In short: the **backend runs on Railway** wi
 - Only Simple and Weighted routing. Latency, failover, geolocation and multivalue would extend `routing_policy` plus a few extra columns.
 - SQLite allows a single writer, so the backend runs one process. For several instances I'd move to Postgres. The SQL is mostly portable apart from the PRAGMAs and `BEGIN IMMEDIATE`.
 - TypeScript types are maintained by hand to match the Pydantic models. Generating them from the OpenAPI schema (`openapi-typescript`) would remove that drift risk.
-- The **Alias** filter on the records table works on the current page only (the other filters run on the server), so the counter shows the server total. An `alias` query parameter would fix it.
+- The **Alias = Yes/No** filter on the records table works on the current page only (the other filters run on the server). The match count next to the filter counts the current page, while the table header shows the server total. An `alias` query parameter would fix it.
 - **Reset demo data** deletes the account's zones in one transaction and reseeds them in separate ones, so a failure halfway through would leave partial demo data. Running the reset again fixes it.
 - Sign-up is open on the public demo with no rate limit, so anyone can create accounts (each gets about 50 demo rows). Fine for a demo; a real service would add rate limiting or email verification.
 - No frontend unit tests. A Playwright smoke test (`e2e/smoke_test.py`) drives the main flows end to end against a running stack; it is not wired into CI yet.

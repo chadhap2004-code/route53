@@ -13,12 +13,6 @@ export const RECORD_TYPES: { value: RecordType; label: string; placeholder: stri
   { value: "TXT", label: "TXT – Verifies email senders and application-specific values", placeholder: '"Sample text entries"', aliasable: true },
 ];
 
-export const RECORD_TYPE_FILTER_OPTIONS = [
-  { value: "", label: "Type" },
-  ...RECORD_TYPES.map((t) => ({ value: t.value, label: t.value })),
-  { value: "SOA", label: "SOA" },
-];
-
 export const ROUTING_OPTIONS = [
   { value: "simple", label: "Simple routing" },
   { value: "weighted", label: "Weighted" },
