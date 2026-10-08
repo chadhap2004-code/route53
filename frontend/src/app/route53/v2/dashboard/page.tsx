@@ -35,12 +35,12 @@ export default function DashboardPage() {
           <Card
             title="DNS management"
             body={
-              <Box>
+              <SpaceBetween size="xxs">
                 <Box variant="awsui-value-large">{zones.data?.total ?? "–"}</Box>
                 <Link href="/route53/v2/hostedzones" onFollow={follow}>
                   Hosted zones
                 </Link>
-              </Box>
+              </SpaceBetween>
             }
             action={<Button onClick={() => router.push("/route53/v2/hostedzones/create")}>Create hosted zone</Button>}
           />
