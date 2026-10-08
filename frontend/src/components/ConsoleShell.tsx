@@ -55,20 +55,18 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
         <TopNavigation
           identity={{ href: "/route53/v2/hostedzones", title: "Route 53 Console" }}
           search={
-            <div data-shortcut="global-search">
-              <Input
-                type="search"
-                value={search}
-                placeholder="Search hosted zones"
-                ariaLabel="Search hosted zones"
-                onChange={(e) => setSearch(e.detail.value)}
-                onKeyDown={(e) => {
-                  if (e.detail.key === "Enter") {
-                    router.push(`/route53/v2/hostedzones?q=${encodeURIComponent(search.trim())}`);
-                  }
-                }}
-              />
-            </div>
+            <Input
+              type="search"
+              value={search}
+              placeholder="Search hosted zones"
+              ariaLabel="Search hosted zones"
+              onChange={(e) => setSearch(e.detail.value)}
+              onKeyDown={(e) => {
+                if (e.detail.key === "Enter") {
+                  router.push(`/route53/v2/hostedzones?q=${encodeURIComponent(search.trim())}`);
+                }
+              }}
+            />
           }
           utilities={[
             { type: "button", iconName: "keyboard", ariaLabel: "Keyboard shortcuts", title: "Keyboard shortcuts (?)", onClick: () => setHelp(true) },

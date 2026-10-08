@@ -10,7 +10,7 @@ import Select from "@cloudscape-design/components/select";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Textarea from "@cloudscape-design/components/textarea";
 import Toggle from "@cloudscape-design/components/toggle";
-import { RECORD_TYPES, ROUTING_OPTIONS, TTL_PRESETS, displayName, typeMeta } from "@/lib/dns";
+import { RECORD_TYPES, ROUTING_OPTIONS, TTL_PRESETS, displayName, relativeName, typeMeta } from "@/lib/dns";
 import type { RecordSet, RecordSetInput, RecordType, RoutingPolicy } from "@/lib/types";
 
 export interface RecordDraft {
@@ -45,10 +45,9 @@ export function emptyDraft(): RecordDraft {
 }
 
 export function draftFromRecord(r: RecordSet, zoneName: string): RecordDraft {
-  const rel = r.name === zoneName ? "" : r.name.endsWith("." + zoneName) ? r.name.slice(0, -(zoneName.length + 1)) : r.name;
   return {
     key: nextKey++,
-    name: rel,
+    name: relativeName(r.name, zoneName),
     type: r.type,
     alias: !!r.alias_target,
     aliasTarget: r.alias_target?.dns_name ?? "",
@@ -113,7 +112,6 @@ export default function RecordForm({ draft, zoneName, onChange, showErrors, mode
       <ColumnLayout columns={2}>
         <FormField
           label="Record name"
-          info={undefined}
           description="Keep blank to create a record for the root domain."
           constraintText="Valid characters: a-z, 0-9, ! &quot; # $ % & ' ( ) * + , - / : ; < = > ? @ [ \ ] ^ _ ` { | } . ~"
         >
