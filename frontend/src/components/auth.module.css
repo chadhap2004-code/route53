@@ -1,0 +1,261 @@
+/* Shared look for the sign-in and sign-up pages: warm off-white page, rounded card, orange pill
+   primary button, outlined pill secondary button. Deliberately no AWS logo or AWS wording (D-40). */
+
+.page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 32px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #faf8f6;
+  /* Faint outlined cubes, like the console sign-in background. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='184' viewBox='0 0 160 184'%3E%3Cg fill='none' stroke='%23efe7e1' stroke-width='2'%3E%3Cpath d='M80 4 L156 48 L156 136 L80 180 L4 136 L4 48 Z'/%3E%3Cpath d='M80 92 L156 48 M80 92 L4 48 M80 92 L80 180'/%3E%3C/g%3E%3C/svg%3E");
+  font-family: "Open Sans", "Helvetica Neue", Roboto, Arial, sans-serif;
+  color: #16191f;
+}
+
+.plainPage {
+  composes: page;
+  background-color: #ffffff;
+  background-image: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.wordmark {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin: 8px 0 4px;
+}
+
+.demoLabel {
+  font-size: 13px;
+  color: #5f6b7a;
+  margin-bottom: 28px;
+}
+
+.card {
+  width: 100%;
+  max-width: 424px;
+  box-sizing: border-box;
+  background: #ffffff;
+  border: 1px solid #c6c6cd;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.plainCard {
+  width: 100%;
+  max-width: 376px;
+  position: relative;
+  z-index: 1;
+}
+
+.heading {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 16px;
+}
+
+.bigHeading {
+  font-size: 30px;
+  font-weight: 700;
+  margin: 24px 0 20px;
+}
+
+.text {
+  font-size: 15px;
+  margin: 0 0 16px;
+}
+
+.hint {
+  font-size: 14px;
+  background: #f0fbff;
+  border: 1px solid #0972d3;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin: 0 0 20px;
+}
+
+.field {
+  margin-bottom: 20px;
+}
+
+.label {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.description {
+  font-size: 14px;
+  color: #5f6b7a;
+  margin: -2px 0 8px;
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 40px;
+  padding: 8px 14px;
+  font-size: 16px;
+  border: 1px solid #8c8c94;
+  border-radius: 8px;
+  background: #ffffff;
+  color: inherit;
+}
+
+.input::placeholder {
+  color: #8c8c94;
+  font-style: italic;
+}
+
+.input:focus {
+  outline: none;
+  border: 2px solid #0972d3;
+  padding: 7px 13px;
+}
+
+.inputError {
+  border-color: #d91515;
+}
+
+.fieldError {
+  color: #d91515;
+  font-size: 14px;
+  margin-top: 6px;
+}
+
+.alert {
+  font-size: 14px;
+  color: #d91515;
+  background: #fff7f7;
+  border: 1px solid #d91515;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin: 0 0 16px;
+}
+
+.primary {
+  width: 100%;
+  height: 40px;
+  border: none;
+  border-radius: 20px;
+  background: #ff9900;
+  color: #16191f;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary:hover {
+  background: #ec7211;
+}
+
+.primary:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid #e9ebed;
+}
+
+.secondary {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  height: 40px;
+  line-height: 36px;
+  text-align: center;
+  border: 2px solid #0972d3;
+  border-radius: 20px;
+  background: #ffffff;
+  color: #0972d3;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.secondary:hover {
+  background: #f0fbff;
+}
+
+.back {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 0 12px;
+  color: #0972d3;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.identity {
+  font-size: 15px;
+  margin: 0 0 16px;
+  word-break: break-all;
+}
+
+.steps {
+  font-size: 14px;
+  color: #5f6b7a;
+  margin: 0 0 8px;
+}
+
+.footer {
+  max-width: 424px;
+  text-align: center;
+  font-size: 14px;
+  color: #5f6b7a;
+  margin-top: 16px;
+  line-height: 1.5;
+  position: relative;
+  z-index: 1;
+}
+
+.footer a {
+  color: #0972d3;
+}
+
+/* Line-drawn cubes in the bottom corners of the sign-up page. */
+.cornerArt {
+  position: absolute;
+  bottom: 0;
+  width: 260px;
+  height: 260px;
+  pointer-events: none;
+}
+
+.cornerLeft {
+  composes: cornerArt;
+  left: 0;
+}
+
+.cornerRight {
+  composes: cornerArt;
+  right: 0;
+}
+
+@media (max-width: 700px) {
+  .cornerArt {
+    display: none;
+  }
+}

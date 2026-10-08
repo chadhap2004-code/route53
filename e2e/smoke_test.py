@@ -23,7 +23,9 @@ async def main():
         errors = []
         pg.on("pageerror", lambda e: errors.append(str(e)))
         await pg.goto(B + "/login")
-        await pg.click("button[type=submit]")
+        await pg.click("button[type=submit]")  # step 1: Next (demo user pre-filled)
+        await pg.wait_for_selector("input[type=password]")
+        await pg.click("button[type=submit]")  # step 2: Sign in (password pre-filled)
         await pg.wait_for_url("**/hostedzones")
         # create zone
         await pg.click("button:has-text('Create hosted zone')")
