@@ -80,3 +80,37 @@ def test_json_export_shape(client, zone):
     data = client.get(f"/api/hosted-zones/{zone['id']}/export", params={"format": "json"}).json()
     assert data["HostedZone"]["Name"] == "unit-test.example."
     assert {r["Type"] for r in data["ResourceRecordSets"]} == {"NS", "SOA"}
+
+
+def test_export_all_zones_json(client, zone):
+    r = client.get("/api/hosted-zones/export", params={"format": "json"})
+    assert r.status_code == 200 and 'filename="hosted-zones.json"' in r.headers["content-disposition"]
+    zones = r.json()["HostedZones"]
+    assert len(zones) == 8  # the 7 demo zones + the test zone
+    one = next(z for z in zones if z["HostedZone"]["Name"] == "unit-test.example.")
+    assert {rr["Type"] for rr in one["ResourceRecordSets"]} == {"NS", "SOA"}
+
+
+def test_export_all_zones_bind_zip(client, zone):
+    import io
+    import zipfile
+    r = client.get("/api/hosted-zones/export", params={"format": "bind"})
+    assert r.status_code == 200 and r.headers["content-type"] == "application/zip"
+    names = zipfile.ZipFile(io.BytesIO(r.content)).namelist()
+    assert len(names) == 8 and all(n.endswith(".zone") for n in names)
+    text = zipfile.ZipFile(io.BytesIO(r.content)).read(f"unit-test.example_{zone['id']}.zone").decode()
+    assert "$ORIGIN unit-test.example." in text
+
+
+def test_export_all_zones_only_has_own_zones(client):
+    from .test_api import NEW_USER, _signup_client
+    with _signup_client() as new:
+        new.post("/api/auth/signup", json=NEW_USER)
+        assert new.get("/api/hosted-zones/export").json() == {"HostedZones": []}
+        new.post("/api/hosted-zones", json={"name": "only-b.example"})
+        zones = new.get("/api/hosted-zones/export").json()["HostedZones"]
+        assert [z["HostedZone"]["Name"] for z in zones] == ["only-b.example."]
+    names = [z["HostedZone"]["Name"] for z in client.get("/api/hosted-zones/export").json()["HostedZones"]]
+    assert "only-b.example." not in names
+    client.post("/api/auth/logout")
+    assert client.get("/api/hosted-zones/export").status_code == 401

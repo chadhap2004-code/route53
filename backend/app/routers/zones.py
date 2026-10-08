@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Query, Response
 
 from ..db import get_db
 from ..deps import CurrentUser, current_user
-from ..dns.zonefile import ZoneFileError, export_bind, export_json
+from ..dns.zonefile import ZoneFileError, export_all_bind, export_all_json, export_bind, export_json
 from ..errors import ApiError
 from ..schemas import (
     BulkDeleteIn,
@@ -59,6 +59,23 @@ def list_zones(
 @router.post("", response_model=ZoneOut, status_code=201)
 def create_zone(body: ZoneCreate, user: CurrentUser = Depends(current_user), db: sqlite3.Connection = Depends(get_db)):
     return zone_service.create_zone(db, user.account_id, user.username, body)
+
+
+# Declared before "/{zone_id}" so "export" isn't read as a zone ID.
+@router.get("/export")
+def export_all_zones(format: Literal["bind", "json"] = "json", user: CurrentUser = Depends(current_user),
+                     db: sqlite3.Connection = Depends(get_db)):
+    """Every hosted zone of the signed-in account: one JSON file, or a .zip of BIND zone files."""
+    zones = [
+        (zone_service.get_zone(db, user.account_id, row["id"]), record_service.all_records(db, row))
+        for row in zone_service.all_zone_rows(db, user.account_id)
+    ]
+    if format == "json":
+        body, media, filename = export_all_json(zones), "application/json", "hosted-zones.json"
+    else:
+        body, media, filename = export_all_bind(zones), "application/zip", "hosted-zones-bind.zip"
+    return Response(content=body, media_type=media,
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 
 
 @router.get("/{zone_id}", response_model=ZoneOut)

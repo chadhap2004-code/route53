@@ -21,6 +21,9 @@ const TITLES: Record<string, string> = {
   "firewall/rulegroups": "DNS Firewall rule groups",
   "firewall/domainlists": "DNS Firewall domain lists",
   settings: "User settings",
+  "account/organization": "Organization",
+  "account/billing": "Billing and Cost Management",
+  "account/security-credentials": "Security credentials",
 };
 
 export default function Placeholder({ params }: { params: { slug: string[] } }) {

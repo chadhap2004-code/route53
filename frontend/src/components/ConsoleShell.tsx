@@ -12,9 +12,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { api, errorMessage } from "@/lib/api";
+import type { VisualMode } from "@/lib/theme";
 import { ShortcutsModal, useGlobalShortcuts } from "./KeyboardShortcuts";
 import SettingsPanel from "./SettingsPanel";
 import { useNotifications } from "./Notifications";
+import { useTheme } from "./Theme";
 
 // Simple hand-drawn console logo: "aws" text with a smile-style arrow.
 // Drawn here as SVG (nothing downloaded from amazon.com); sign-in and sign-up pages stay unbranded.
@@ -39,6 +41,20 @@ const helpIcon = (
   </svg>
 );
 
+// Account pages outside this clone's scope open the coming-soon page.
+const ACCOUNT_PAGES: Record<string, string> = {
+  organization: "/route53/v2/account/organization",
+  billing: "/route53/v2/account/billing",
+  credentials: "/route53/v2/account/security-credentials",
+};
+
+// Same setting as the gear icon's "Visual mode" (SettingsPanel), in the order of the account menu.
+const VISUAL_MODES: { id: VisualMode; text: string }[] = [
+  { id: "light", text: "Light" },
+  { id: "dark", text: "Dark" },
+  { id: "system", text: "Browser default" },
+];
+
 function formatAccount(id: string) {
   return id.replace(/(\d{4})(\d{4})(\d{4})/, "$1-$2-$3");
 }
@@ -47,6 +63,7 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { notify } = useNotifications();
+  const { mode, setMode } = useTheme();
   const [help, setHelp] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
@@ -89,6 +106,12 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
       setHelp(true);
     } else if (id === "reset") {
       setConfirmReset(true);
+    } else if (id === "export-json" || id === "export-bind") {
+      window.location.href = api.exportAllUrl(id === "export-json" ? "json" : "bind");
+    } else if (id.startsWith("mode-")) {
+      setMode(id.slice("mode-".length) as VisualMode);
+    } else if (ACCOUNT_PAGES[id]) {
+      router.push(ACCOUNT_PAGES[id]);
     }
   }
 
@@ -149,19 +172,36 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
             },
             {
               type: "menu-dropdown",
-              // Like the console: "Account name (account ID)" on the menu, the user underneath.
-              text: me.data ? (me.data.account_name ? `${me.data.account_name} (${me.data.account_id})` : me.data.username) : "…",
-              description: me.data
-                ? `${me.data.account_name ? `${me.data.username} · ` : ""}Account ID: ${formatAccount(me.data.account_id)}`
-                : undefined,
+              // "<account name or user> @ 1234-5678-9012" on the bar; the user (bold) and account ID head the menu.
+              text: me.data ? `${me.data.account_name || me.data.username} @ ${formatAccount(me.data.account_id)}` : "…",
               iconName: "user-profile",
               onItemClick: (e) => onMenu(e.detail.id),
               items: [
-                { id: "shortcuts", text: "Keyboard shortcuts" },
+                {
+                  text: me.data?.username ?? "",
+                  items: [
+                    { id: "account-id", text: `Account ID: ${me.data ? formatAccount(me.data.account_id) : ""}`, disabled: true },
+                    { id: "organization", text: "Organization" },
+                    { id: "billing", text: "Billing and Cost Management" },
+                    { id: "credentials", text: "Security credentials" },
+                  ],
+                },
+                {
+                  text: "Export all hosted zones",
+                  items: [
+                    { id: "export-json", text: "As JSON" },
+                    { id: "export-bind", text: "As BIND zone files" },
+                  ],
+                },
+                { id: "shortcuts", text: "Keyboard shortcuts", secondaryText: "Press ?" },
+                {
+                  text: "Visual mode",
+                  items: VISUAL_MODES.map((m) => ({ id: `mode-${m.id}`, text: m.text, itemType: "checkbox" as const, checked: mode === m.id })),
+                },
                 // Only the shared demo account has seed data to restore; other accounts own their zones.
                 ...(me.data?.is_demo ? [{ id: "reset", text: "Reset demo data" }] : []),
-                { id: "signout", text: "Sign out" },
                 { id: "disclaimer", text: "Not affiliated with AWS", disabled: true },
+                { id: "signout", text: "Sign out" },
               ],
             },
           ]}

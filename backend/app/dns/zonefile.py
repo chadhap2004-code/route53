@@ -6,8 +6,10 @@ parser handles all of that; our code only maps its output onto Route53 record se
 """
 from __future__ import annotations
 
+import io
 import json
 import re
+import zipfile
 
 import dns.exception
 import dns.rdatatype
@@ -73,6 +75,26 @@ def export_bind(zone: ZoneOut, records: list[RecordSetOut]) -> str:
 
 def export_json(zone: ZoneOut, records: list[RecordSetOut]) -> str:
     """Same shape as `aws route53 list-resource-record-sets` output, so it's familiar."""
+    return json.dumps(_zone_doc(zone, records), indent=2) + "\n"
+
+
+def export_all_json(zones: list[tuple[ZoneOut, list[RecordSetOut]]]) -> str:
+    """Every hosted zone of the account in one document: {"HostedZones": [<same shape as export_json>, ...]}."""
+    return json.dumps({"HostedZones": [_zone_doc(z, records) for z, records in zones]}, indent=2) + "\n"
+
+
+def export_all_bind(zones: list[tuple[ZoneOut, list[RecordSetOut]]]) -> bytes:
+    """A .zip with one BIND zone file per hosted zone (BIND expects one zone per file).
+    File names include the zone ID, because two public zones can share a name (D-29)."""
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        for zone, records in zones:
+            stem = re.sub(r"[^a-z0-9.-]", "_", zone.name.rstrip("."))
+            archive.writestr(f"{stem}_{zone.id}.zone", export_bind(zone, records))
+    return buffer.getvalue()
+
+
+def _zone_doc(zone: ZoneOut, records: list[RecordSetOut]) -> dict:
     rrsets = []
     for r in records:
         item: dict = {"Name": r.name, "Type": r.type}
@@ -91,7 +113,7 @@ def export_json(zone: ZoneOut, records: list[RecordSetOut]) -> str:
         if r.health_check_id:
             item["HealthCheckId"] = r.health_check_id
         rrsets.append(item)
-    doc = {
+    return {
         "HostedZone": {
             "Id": f"/hostedzone/{zone.id}",
             "Name": zone.name,
@@ -100,4 +122,3 @@ def export_json(zone: ZoneOut, records: list[RecordSetOut]) -> str:
         },
         "ResourceRecordSets": rrsets,
     }
-    return json.dumps(doc, indent=2) + "\n"

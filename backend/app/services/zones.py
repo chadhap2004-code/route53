@@ -90,6 +90,13 @@ def get_zone(conn: sqlite3.Connection, account_id: str, zone_id: str) -> ZoneOut
     return _row_to_out(conn, get_zone_row(conn, account_id, zone_id))
 
 
+def all_zone_rows(conn: sqlite3.Connection, account_id: str) -> list[sqlite3.Row]:
+    """Every zone of the account, by name (for "Export all hosted zones")."""
+    return conn.execute(
+        "SELECT * FROM hosted_zones WHERE account_id = ? ORDER BY name, id", (account_id,)
+    ).fetchall()
+
+
 def list_zones(
     conn: sqlite3.Connection,
     account_id: str,

@@ -88,6 +88,8 @@ export const api = {
   importZoneFile: (zoneId: string, zone_file: string, dry_run: boolean, overwrite: boolean) =>
     request<ImportResult>("POST", `/hosted-zones/${zoneId}/import`, { zone_file, dry_run, overwrite }),
   exportUrl: (zoneId: string, format: "bind" | "json") => `/api/hosted-zones/${zoneId}/export?format=${format}`,
+  // Every zone of the account: one JSON file, or a .zip of BIND zone files.
+  exportAllUrl: (format: "bind" | "json") => `/api/hosted-zones/export?format=${format}`,
 
   resetDemo: () => request<void>("POST", "/demo/reset"),
 };
