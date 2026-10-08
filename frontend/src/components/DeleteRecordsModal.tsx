@@ -71,7 +71,7 @@ export default function DeleteRecordsModal({ zoneId, records, onDismiss, onDelet
           columnDefinitions={[
             { id: "name", header: "Record name", cell: (r) => r.name },
             { id: "type", header: "Type", cell: (r) => r.type },
-            { id: "value", header: "Value/Route traffic to", cell: (r) => <span className="mono value-lines">{r.alias_target ? r.alias_target.dns_name : r.values.join("\n")}</span> },
+            { id: "value", header: "Value/Route traffic to", cell: (r) => <span className="value-lines">{r.alias_target ? r.alias_target.dns_name : r.values.join("\n")}</span> },
           ]}
         />
       </SpaceBetween>

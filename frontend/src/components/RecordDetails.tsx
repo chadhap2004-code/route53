@@ -24,7 +24,7 @@ export default function RecordDetails({ record, onEdit }: { record: RecordSet; o
             label: record.alias_target ? "Route traffic to" : "Value",
             value: (
               <SpaceBetween size="xxs">
-                <span className="mono value-lines">{value}</span>
+                <span className="value-lines">{value}</span>
                 <CopyToClipboard variant="icon" textToCopy={value} copyErrorText="Failed to copy" copySuccessText="Value copied" />
               </SpaceBetween>
             ),

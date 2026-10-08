@@ -70,7 +70,7 @@ function ZoneDetails({ zone, onEdit }: { zone: HostedZone; onEdit: () => void })
               value: (
                 <SpaceBetween size="xxxs">
                   {zone.name_servers.map((ns) => (
-                    <span key={ns} className="mono">{ns}</span>
+                    <span key={ns}>{ns}</span>
                   ))}
                   {zone.name_servers.length > 0 && (
                     <CopyToClipboard variant="inline" textToCopy={zone.name_servers.join("\n")} textToDisplay="Copy all" copyErrorText="Failed to copy" copySuccessText="Name servers copied" />
