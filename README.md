@@ -2,7 +2,7 @@
 
 A working clone of the AWS Route 53 console for managing hosted zones and DNS records. It uses Next.js (TypeScript) for the UI, FastAPI for the API and SQLite for storage.
 
-**Live demo:** `<your-vercel-url>` · sign in with `demo` / `route53-demo` (pre-filled)
+**Live demo:** https://route53-nu.vercel.app · sign in with `demo` / `route53-demo` (pre-filled)
 
 ![Hosted zones](docs/screenshots/hosted-zones.png)
 
