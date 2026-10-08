@@ -112,6 +112,17 @@ def test_record_crud(client, zone):
     assert client.get(f"/api/hosted-zones/{zid}/records/{rec['id']}").status_code == 404
 
 
+def test_edit_keeps_health_check_unless_sent(client, zone):
+    zid = zone["id"]
+    rec = client.post(f"/api/hosted-zones/{zid}/records",
+                      json={"name": "hc", "type": "A", "values": ["192.0.2.1"], "health_check_id": "hc-123"}).json()
+    r = client.put(f"/api/hosted-zones/{zid}/records/{rec['id']}", json={"ttl": 60, "values": ["192.0.2.1"]})
+    assert r.json()["health_check_id"] == "hc-123"
+    r = client.put(f"/api/hosted-zones/{zid}/records/{rec['id']}",
+                   json={"ttl": 60, "values": ["192.0.2.1"], "health_check_id": None})
+    assert r.json()["health_check_id"] is None
+
+
 def test_duplicate_record_rejected(client, zone):
     zid = zone["id"]
     body = {"name": "www", "type": "A", "values": ["192.0.2.1"]}

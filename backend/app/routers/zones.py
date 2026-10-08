@@ -119,10 +119,12 @@ def update_record(zone_id: str, record_id: int, body: RecordSetUpdate, user: Cur
                   db: sqlite3.Connection = Depends(get_db)):
     zone = zone_service.get_zone_row(db, user.account_id, zone_id)
     row = record_service.get_record_row(db, zone_id, record_id)
+    # Only change the health check if the request includes the field; otherwise keep the stored one.
+    health_check_id = body.health_check_id if "health_check_id" in body.model_fields_set else row["health_check_id"]
     rs = RecordSetIn(
         name=row["name"], type=row["type"], ttl=body.ttl, values=body.values,
         routing_policy=row["routing_policy"], set_identifier=row["set_identifier"] or None,
-        weight=body.weight, alias_target=body.alias_target, health_check_id=body.health_check_id,
+        weight=body.weight, alias_target=body.alias_target, health_check_id=health_check_id,
     )
     change_service.apply_changes(db, zone, [Change(action="UPSERT", record_set=rs)], submitted_by=user.username)
     return record_service.get_record(db, zone, record_id)
