@@ -9,6 +9,8 @@ from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from .config import settings
+
 
 class ApiError(Exception):
     def __init__(self, status: int, code: str, message: str, details: list[str] | None = None):
@@ -29,10 +31,15 @@ def invalid_change_batch(messages: list[str]) -> ApiError:
 
 
 async def api_error_handler(_: Request, exc: ApiError) -> JSONResponse:
-    return JSONResponse(
+    response = JSONResponse(
         status_code=exc.status,
         content={"error": {"code": exc.code, "message": exc.message, "details": exc.details}},
     )
+    if exc.code == "NotAuthenticated":
+        # Clear a stale or expired session cookie, so the frontend middleware (which only sees whether
+        # a cookie exists) doesn't keep treating the browser as signed in.
+        response.delete_cookie(settings.session_cookie_name, path="/")
+    return response
 
 
 async def validation_error_handler(_: Request, exc: RequestValidationError) -> JSONResponse:

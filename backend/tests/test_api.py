@@ -32,6 +32,14 @@ def test_session_cookie_is_httponly(tmp_path):
         assert "httponly" in cookie and "samesite=lax" in cookie
 
 
+def test_stale_session_cookie_is_cleared_on_401(client):
+    with _signup_client() as stale:  # a browser holding an expired or unknown session token
+        stale.cookies.set("r53_session", "not-a-real-token")
+        r = stale.get("/api/hosted-zones")
+        assert r.status_code == 401
+        assert "r53_session=" in r.headers["set-cookie"] and "max-age=0" in r.headers["set-cookie"].lower()
+
+
 def test_logout_invalidates_session(client):
     assert client.get("/api/auth/me").status_code == 200
     assert client.post("/api/auth/logout").status_code == 204
