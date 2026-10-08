@@ -207,8 +207,12 @@ def normalize_value(rtype: str, raw: str) -> str:
         if tag not in CAA_TAGS:
             raise DnsValidationError(f"Invalid CAA tag '{tag}': must be one of {', '.join(CAA_TAGS)}")
         inner = m.group(3).strip()
-        if inner.startswith('"') and inner.endswith('"') and len(inner) >= 2:
-            inner = inner[1:-1]
+        if inner.startswith('"'):
+            # Unescape before re-quoting, so saving a stored value again gives the same value.
+            strings = parse_txt_strings(inner)
+            if len(strings) != 1:
+                raise DnsValidationError(f"Invalid CAA value '{value}': the value must be a single quoted string")
+            inner = strings[0]
         return f"{flags} {tag} {_quote(inner)}"
 
     if rtype == "TXT":

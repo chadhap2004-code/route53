@@ -90,6 +90,12 @@ def test_txt_escapes():
     assert parse_txt_strings(r'"say \"hi\""') == ['say "hi"']
 
 
+def test_caa_escaped_quote_is_stable():
+    once = normalize_value("CAA", r'0 iodef "mailto:a\"b@example.com"')
+    assert once == r'0 iodef "mailto:a\"b@example.com"'
+    assert normalize_value("CAA", once) == once  # re-saving doesn't add more backslashes
+
+
 def test_cname_single_value_and_duplicates():
     with pytest.raises(DnsValidationError, match="exactly one"):
         normalize_values("CNAME", ["a.example.com", "b.example.com"])
