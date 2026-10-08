@@ -114,7 +114,7 @@ function RecordsTable({
     setVisible(readPref("r53.records.columns", DEFAULT_VISIBLE));
     setWrapLines(readPref("r53.records.wrap", false));
   }, []);
-  useEffect(() => setPage(1), [q, type, routing, pageSize, sorting]);
+  useEffect(() => setPage(1), [q, type, routing, alias, pageSize, sorting]);
 
   const query = useQuery({
     queryKey: ["records", zone.id, { q, type: type.value, routing: routing.value, page, pageSize, sorting }],
