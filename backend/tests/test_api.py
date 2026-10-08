@@ -132,6 +132,23 @@ def test_existing_database_gets_account_name_column(tmp_path):
     old.close()
 
 
+def test_demo_user_has_account_name(client):
+    assert client.get("/api/auth/me").json()["account_name"] == "Demo account"
+
+
+def test_seed_fills_in_missing_demo_account_name(client):
+    """A demo user created before account_name existed gets the name on the next start."""
+    from app.config import settings
+    from app.db import connect
+    from app.seed import seed
+    conn = connect()
+    conn.execute("UPDATE users SET account_name = '' WHERE username = ?", (settings.demo_username,))
+    seed(conn)
+    row = conn.execute("SELECT account_name FROM users WHERE username = ?", (settings.demo_username,)).fetchone()
+    assert row["account_name"] == "Demo account"
+    conn.close()
+
+
 # ------------------------------------------------------------------ zones
 
 def test_create_zone_adds_ns_and_soa(client, zone):
@@ -358,6 +375,7 @@ def test_accounts_are_isolated(client):
 
 def test_other_account_cannot_see_or_change_zones(client):
     from fastapi.testclient import TestClient
+    from app.config import settings
     from app.db import connect
     from app.main import app
     from app.services import auth as auth_service

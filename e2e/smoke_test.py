@@ -115,7 +115,7 @@ async def main():
         await pg.keyboard.press("t")
         print("shortcuts ok")
         # logout
-        await pg.locator("button[aria-label=demo]:visible").click()
+        await pg.locator("button[aria-label^='Demo account']:visible").click()
         await pg.click("text=Sign out")
         await pg.wait_for_url("**/login")
         await pg.goto(B + "/route53/v2/hostedzones")

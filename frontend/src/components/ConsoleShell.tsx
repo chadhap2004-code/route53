@@ -152,8 +152,8 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
             },
             {
               type: "menu-dropdown",
-              // Like the console: account name with ID on the menu, the user underneath.
-              text: me.data ? me.data.account_name || me.data.username : "…",
+              // Like the console: "Account name (account ID)" on the menu, the user underneath.
+              text: me.data ? (me.data.account_name ? `${me.data.account_name} (${me.data.account_id})` : me.data.username) : "…",
               description: me.data
                 ? `${me.data.account_name ? `${me.data.username} · ` : ""}Account ID: ${formatAccount(me.data.account_id)}`
                 : undefined,

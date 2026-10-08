@@ -16,6 +16,7 @@ from .services import changes as change_service
 from .services import zones as zone_service
 
 DEMO_ACCOUNT_ID = "123456789012"
+DEMO_ACCOUNT_NAME = "Demo account"
 
 
 def _rs(name, rtype, values, ttl=300, **kw) -> Change:
@@ -101,7 +102,9 @@ def reset_account(conn: sqlite3.Connection, account_id: str, username: str) -> N
 
 
 def seed(conn: sqlite3.Connection) -> None:
-    user = auth_service.ensure_user(conn, settings.demo_username, settings.demo_password, DEMO_ACCOUNT_ID)
+    user = auth_service.ensure_user(
+        conn, settings.demo_username, settings.demo_password, DEMO_ACCOUNT_ID, DEMO_ACCOUNT_NAME
+    )
     has_zones = conn.execute("SELECT 1 FROM hosted_zones WHERE account_id = ? LIMIT 1", (user["account_id"],)).fetchone()
     if not has_zones:
         seed_account(conn, user["account_id"], user["username"])

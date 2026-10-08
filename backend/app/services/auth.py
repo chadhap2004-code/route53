@@ -36,15 +36,21 @@ def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
-def ensure_user(conn: sqlite3.Connection, username: str, password: str, account_id: str) -> sqlite3.Row:
+def ensure_user(
+    conn: sqlite3.Connection, username: str, password: str, account_id: str, account_name: str = ""
+) -> sqlite3.Row:
     row = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
-    if row:
+    if row and (row["account_name"] or not account_name):
         return row
     with transaction(conn):
-        conn.execute(
-            "INSERT INTO users (username, password_hash, account_id) VALUES (?, ?, ?)",
-            (username, hash_password(password), account_id),
-        )
+        if row:
+            # Users created before account_name existed get the name filled in once.
+            conn.execute("UPDATE users SET account_name = ? WHERE id = ?", (account_name, row["id"]))
+        else:
+            conn.execute(
+                "INSERT INTO users (username, password_hash, account_id, account_name) VALUES (?, ?, ?, ?)",
+                (username, hash_password(password), account_id, account_name),
+            )
     return conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
 
 
