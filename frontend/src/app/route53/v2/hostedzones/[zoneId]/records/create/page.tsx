@@ -55,7 +55,7 @@ export default function CreateRecordPage({ params }: { params: { zoneId: string 
       breadcrumbs={[route53Crumb, zonesCrumb, { text: name, href: `/route53/v2/hostedzones/${zoneId}` }, { text: "Create record", href: "#" }]}
       contentType="form"
     >
-      <ContentLayout header={<Header variant="h1" description="Records define how you want to route traffic for a domain and its subdomains.">Quick create record</Header>}>
+      <ContentLayout header={<Header variant="h1" description="Records define how you want to route traffic for a domain and its subdomains.">Create record</Header>}>
         {!zone.data ? (
           zone.isError ? <Alert type="error">{errorMessage(zone.error)}</Alert> : <Spinner size="large" />
         ) : (
