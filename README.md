@@ -68,7 +68,7 @@ I focused on two things:
 
 | Area | What works |
 |---|---|
-| **Auth (mocked)** | Sign up, login, logout, and a session that survives a refresh. A new account gets its own 12-digit account ID and its own copy of the demo zones. Sessions live server-side (SQLite) behind an HttpOnly cookie. Middleware redirects to `/login` when there's no session. |
+| **Auth (mocked)** | Two-step sign-in (email or username, then password) and two-step sign-up (email and account name, then password), logout, and a session that survives a refresh. A new account gets its own 12-digit account ID, its own copy of the demo zones, and its name in the top bar. Sessions live server-side (SQLite) behind an HttpOnly cookie. Middleware sends you to `/login` without a session, and from `/login` or `/signup` to the console with one. |
 | **Hosted zones** | List, search (name / ID / description), filter by type, sort, paginate, create (public or private with a VPC, plus tags), edit (description and tags; the name can't change), and delete (blocked while the zone still has records). |
 | **Records** | A, AAAA, CNAME, TXT, MX, NS, PTR, SRV and CAA, plus editing the zone's SOA/NS. List, search by name **or value**, filter by type / routing policy / alias, sort and paginate. Create several records at once ("Add another record"), edit, and delete one or many. |
 | **Routing** | Simple and Weighted (weight + record ID), plus Alias records. |
@@ -191,7 +191,7 @@ Interactive docs: `http://localhost:8000/docs`. Errors are always `{"error": {"c
 
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/api/auth/signup` | Create a user in a new account, seed the demo zones, and sign in (`409 UsernameTaken` if the name exists) |
+| POST | `/api/auth/signup` | `{email, account_name, password}`: create a user in a new account, seed the demo zones, and sign in (`409 EmailTaken` if the email exists) |
 | POST | `/api/auth/login` | Sign in and set the HttpOnly session cookie |
 | POST | `/api/auth/logout` | Delete the session |
 | GET | `/api/auth/me` | Current user |
@@ -209,7 +209,7 @@ Interactive docs: `http://localhost:8000/docs`. Errors are always `{"error": {"c
 | POST | `/api/demo/reset` | Restore demo data for the signed-in account |
 | GET | `/api/health` | Health check |
 
-Error codes used: `NotAuthenticated`, `InvalidCredentials`, `UsernameTaken`, `NoSuchHostedZone`, `NoSuchRecordSet`, `InvalidDomainName`, `InvalidVPCId`, `ConflictingDomainExists`, `HostedZoneNotEmpty`, `InvalidChangeBatch`, `InvalidZoneFile`, `InvalidInput`.
+Error codes used: `NotAuthenticated`, `InvalidCredentials`, `EmailTaken`, `NoSuchHostedZone`, `NoSuchRecordSet`, `InvalidDomainName`, `InvalidVPCId`, `ConflictingDomainExists`, `HostedZoneNotEmpty`, `InvalidChangeBatch`, `InvalidZoneFile`, `InvalidInput`.
 
 ---
 
@@ -231,7 +231,7 @@ Error codes used: `NotAuthenticated`, `InvalidCredentials`, `UsernameTaken`, `No
 ## Testing
 
 ```bash
-cd backend && pytest -q          # 92 tests: validators, API rules, import/export round trip
+cd backend && pytest -q          # 97 tests: validators, API rules, import/export round trip
 cd frontend && npm run typecheck && npm run lint && npm run build
 ```
 
@@ -239,7 +239,7 @@ GitHub Actions (`.github/workflows/ci.yml`) runs both on every push.
 
 What the tests cover:
 - every value format, valid and invalid
-- auth (cookie flags, logout invalidation), sign-up (success, taken name, invalid input) and account isolation (another account gets 404 on every zone route)
+- auth (cookie flags, logout invalidation), sign-up (success, taken email, invalid input, login afterwards), the `account_name` migration for older databases, the stale-cookie cleanup on 401 and account isolation (another account gets 404 on every zone route)
 - zone rules (auto NS/SOA, immutable name, not-empty delete, private VPC conflict, tag replacement)
 - record rules (CNAME, duplicates, weighted, alias, outside-zone)
 - change-batch atomicity (including a bulk delete that touches NS/SOA), and a batch that sees its own earlier changes
