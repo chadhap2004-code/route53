@@ -2,7 +2,11 @@
 // Top navigation bar + global behaviour shared by all console pages.
 // Deliberately unbranded (no AWS logo / wording) because it's publicly hosted; the console UI below
 // it uses Cloudscape, the open-source design system the AWS console itself is built with.
+import Box from "@cloudscape-design/components/box";
+import Button from "@cloudscape-design/components/button";
 import Input from "@cloudscape-design/components/input";
+import Modal from "@cloudscape-design/components/modal";
+import SpaceBetween from "@cloudscape-design/components/space-between";
 import TopNavigation from "@cloudscape-design/components/top-navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -23,6 +27,8 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
   const { dark, toggle } = useTheme();
   const [help, setHelp] = useState(false);
   const [search, setSearch] = useState("");
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const me = useQuery({ queryKey: ["me"], queryFn: api.me, staleTime: Infinity });
 
   const openHelp = useCallback(() => setHelp(true), []);
@@ -38,14 +44,22 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
     } else if (id === "shortcuts") {
       setHelp(true);
     } else if (id === "reset") {
-      try {
-        await api.resetDemo();
-        await queryClient.invalidateQueries();
-        router.push("/route53/v2/hostedzones");
-        notify({ type: "success", content: "Demo data was restored." });
-      } catch (e) {
-        notify({ type: "error", header: "Couldn't reset demo data", content: errorMessage(e) });
-      }
+      setConfirmReset(true);
+    }
+  }
+
+  async function resetDemo() {
+    setResetting(true);
+    try {
+      await api.resetDemo();
+      await queryClient.invalidateQueries();
+      router.push("/route53/v2/hostedzones");
+      notify({ type: "success", content: "Demo data was restored." });
+    } catch (e) {
+      notify({ type: "error", header: "Couldn't reset demo data", content: errorMessage(e) });
+    } finally {
+      setResetting(false);
+      setConfirmReset(false);
     }
   }
 
@@ -90,6 +104,26 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
       </div>
       {children}
       <ShortcutsModal visible={help} onDismiss={() => setHelp(false)} />
+      <Modal
+        visible={confirmReset}
+        onDismiss={() => setConfirmReset(false)}
+        header="Reset demo data?"
+        footer={
+          <Box float="right">
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button variant="link" onClick={() => setConfirmReset(false)}>
+                Cancel
+              </Button>
+              <Button variant="primary" loading={resetting} onClick={resetDemo}>
+                Reset
+              </Button>
+            </SpaceBetween>
+          </Box>
+        }
+      >
+        This deletes every hosted zone and record in this account and restores the original demo zones. You can&apos;t
+        undo this action.
+      </Modal>
     </>
   );
 }
