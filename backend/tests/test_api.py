@@ -55,7 +55,7 @@ def _signup_client():
 NEW_USER = {"email": "New.User@Example.com", "account_name": "My test account", "password": "password123"}
 
 
-def test_signup_creates_account_with_demo_zones_and_signs_in(client):
+def test_signup_creates_empty_account_and_signs_in(client):
     with _signup_client() as new:
         r = new.post("/api/auth/signup", json=NEW_USER)
         assert r.status_code == 201, r.text
@@ -67,7 +67,9 @@ def test_signup_creates_account_with_demo_zones_and_signs_in(client):
         cookie = r.headers["set-cookie"].lower()
         assert "httponly" in cookie and "samesite=lax" in cookie
         assert new.get("/api/auth/me").json()["account_name"] == "My test account"  # already signed in
-        assert new.get("/api/hosted-zones").json()["total"] == 7  # seeded with the demo zones
+        me = new.get("/api/auth/me").json()
+        assert me["is_demo"] is False
+        assert new.get("/api/hosted-zones").json()["total"] == 0  # a new account starts with no zones
 
 
 def test_login_works_for_signed_up_account(client):
@@ -104,16 +106,58 @@ def test_signup_rejects_bad_input(client, change):
         assert new.get("/api/auth/me").status_code == 401  # nothing was created or signed in
 
 
-def test_signed_up_account_cannot_see_other_accounts_zones(client):
+def _assert_zone_hidden(c, zone_id):
+    """Every read and write on another account's zone looks like the zone doesn't exist."""
+    assert zone_id not in {z["id"] for z in c.get("/api/hosted-zones", params={"page_size": 100}).json()["items"]}
+    assert c.get(f"/api/hosted-zones/{zone_id}").status_code == 404
+    assert c.get(f"/api/hosted-zones/{zone_id}/records").status_code == 404
+    assert c.get(f"/api/hosted-zones/{zone_id}/changes").status_code == 404
+    assert c.get(f"/api/hosted-zones/{zone_id}/export", params={"format": "bind"}).status_code == 404
+    assert c.patch(f"/api/hosted-zones/{zone_id}", json={"comment": "x"}).status_code == 404
+    assert c.post(f"/api/hosted-zones/{zone_id}/records",
+                  json={"name": "x", "type": "A", "ttl": 60, "values": ["192.0.2.1"]}).status_code == 404
+    assert c.delete(f"/api/hosted-zones/{zone_id}").status_code == 404
+
+
+def test_accounts_cannot_see_each_others_zones(client):
     demo_zone = zone_id_by_name(client, "example.com.")
     with _signup_client() as new:
         new.post("/api/auth/signup", json=NEW_USER)
-        own = new.get("/api/hosted-zones", params={"page_size": 100}).json()["items"]
-        assert demo_zone not in {z["id"] for z in own}  # same zone names, different zones
-        assert new.get(f"/api/hosted-zones/{demo_zone}").status_code == 404
-        assert new.delete(f"/api/hosted-zones/{demo_zone}").status_code == 404
-        new_zone = next(z["id"] for z in own if z["name"] == "example.com.")
-    assert client.get(f"/api/hosted-zones/{new_zone}").status_code == 404  # and the other way round
+        _assert_zone_hidden(new, demo_zone)  # B can't see the demo account's zone
+        r = new.post("/api/hosted-zones", json={"name": "only-b.example"})
+        assert r.status_code == 201
+        new_zone = r.json()["id"]
+        assert [z["id"] for z in new.get("/api/hosted-zones").json()["items"]] == [new_zone]  # only its own zone
+    _assert_zone_hidden(client, new_zone)  # and the demo account can't see B's zone
+    assert client.get(f"/api/hosted-zones/{demo_zone}").status_code == 200  # the demo zone is untouched
+
+
+def test_cleanup_removes_only_old_signup_copies(client):
+    """Accounts that signed up before D-78 got copies of the demo zones; the cleanup removes just those."""
+    from app.cleanup import delete_seeded_copies, seeded_copies
+    from app.db import connect
+    from app.seed import seed_account
+    with _signup_client() as new:
+        new.post("/api/auth/signup", json=NEW_USER)
+        own = new.post("/api/hosted-zones", json={"name": "mine.example"}).json()["id"]
+        conn = connect()
+        account_id = new.get("/api/auth/me").json()["account_id"]
+        seed_account(conn, account_id, NEW_USER["email"].lower())  # what sign-up used to do
+        assert new.get("/api/hosted-zones").json()["total"] == 8
+        assert len(seeded_copies(conn)) == 7
+        assert delete_seeded_copies(conn) == 7
+        conn.close()
+        assert [z["id"] for z in new.get("/api/hosted-zones").json()["items"]] == [own]  # own zone kept
+    assert client.get("/api/hosted-zones").json()["total"] == 7  # demo account untouched
+
+
+def test_only_the_demo_account_can_reset(client):
+    assert client.get("/api/auth/me").json()["is_demo"] is True
+    with _signup_client() as new:
+        new.post("/api/auth/signup", json=NEW_USER)
+        r = new.post("/api/demo/reset")
+        assert r.status_code == 403 and r.json()["error"]["code"] == "AccessDenied"
+        assert new.get("/api/hosted-zones").json()["total"] == 0  # nothing was seeded
 
 
 def test_existing_database_gets_account_name_column(tmp_path):

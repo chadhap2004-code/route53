@@ -160,7 +160,8 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
               items: [
                 { id: "theme", text: dark ? "Switch to light mode" : "Switch to dark mode" },
                 { id: "shortcuts", text: "Keyboard shortcuts" },
-                { id: "reset", text: "Reset demo data" },
+                // Only the shared demo account has seed data to restore; other accounts own their zones.
+                ...(me.data?.is_demo ? [{ id: "reset", text: "Reset demo data" }] : []),
                 { id: "signout", text: "Sign out" },
                 { id: "disclaimer", text: "Not affiliated with AWS", disabled: true },
               ],

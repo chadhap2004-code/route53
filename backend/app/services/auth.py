@@ -65,7 +65,7 @@ def login(conn: sqlite3.Connection, username: str, password: str) -> tuple[str, 
 def signup(conn: sqlite3.Connection, email: str, account_name: str, password: str) -> sqlite3.Row:
     """Create a user (signing in with its email) in its own new mocked AWS account.
 
-    The router then seeds the demo zones and signs the user in.
+    The account starts with no hosted zones; the router then signs the user in.
     """
     if conn.execute("SELECT 1 FROM users WHERE username = ?", (email,)).fetchone():
         raise ApiError(409, "EmailTaken", f"An account with the email {email} already exists. Sign in instead.")

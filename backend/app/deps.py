@@ -19,6 +19,10 @@ class CurrentUser:
     account_id: str
     account_name: str
 
+    @property
+    def is_demo(self) -> bool:
+        return self.username == settings.demo_username
+
 
 def current_user(request: Request, db: sqlite3.Connection = Depends(get_db)) -> CurrentUser:
     token = request.cookies.get(settings.session_cookie_name)

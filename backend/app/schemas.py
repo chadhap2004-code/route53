@@ -67,6 +67,7 @@ class UserOut(BaseModel):
     username: str
     account_id: str
     account_name: str = ""
+    is_demo: bool = False  # only the shared demo user gets seed data and "Reset demo data"
 
 
 # --------------------------------------------------------------------------- zones

@@ -16,6 +16,7 @@ export interface User {
   username: string;
   account_id: string;
   account_name: string;
+  is_demo: boolean; // only the shared demo account can "Reset demo data"
 }
 
 export interface Tag {

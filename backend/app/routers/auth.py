@@ -8,7 +8,6 @@ from ..config import settings
 from ..db import get_db
 from ..deps import CurrentUser, current_user
 from ..schemas import LoginIn, SignupIn, UserOut
-from ..seed import seed_account
 from ..services import auth as auth_service
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -31,16 +30,15 @@ def login(body: LoginIn, response: Response, db: sqlite3.Connection = Depends(ge
     # Sign-in names are stored lower-case (emails are case-insensitive; the demo user is "demo").
     token, user = auth_service.login(db, body.username.strip().lower(), body.password)
     _set_session_cookie(response, token)
-    return UserOut(username=user["username"], account_id=user["account_id"], account_name=user["account_name"])
+    return _user_out(user)
 
 
 @router.post("/signup", response_model=UserOut, status_code=201)
 def signup(body: SignupIn, response: Response, db: sqlite3.Connection = Depends(get_db)) -> UserOut:
-    """Mocked sign-up: a new user (email + account name) in a new account, seeded with the demo zones, then signed in."""
+    """Mocked sign-up: a new user (email + account name) in a new, empty account, then signed in."""
     user = auth_service.signup(db, body.email, body.account_name, body.password)
-    seed_account(db, user["account_id"], user["username"])
     _set_session_cookie(response, auth_service.create_session(db, user["id"]))
-    return UserOut(username=user["username"], account_id=user["account_id"], account_name=user["account_name"])
+    return _user_out(user)
 
 
 @router.post("/logout", status_code=204)
@@ -53,4 +51,10 @@ def logout(request: Request, response: Response, db: sqlite3.Connection = Depend
 
 @router.get("/me", response_model=UserOut)
 def me(user: CurrentUser = Depends(current_user)) -> UserOut:
-    return UserOut(username=user.username, account_id=user.account_id, account_name=user.account_name)
+    return UserOut(username=user.username, account_id=user.account_id, account_name=user.account_name,
+                   is_demo=user.is_demo)
+
+
+def _user_out(user: sqlite3.Row) -> UserOut:
+    return UserOut(username=user["username"], account_id=user["account_id"], account_name=user["account_name"],
+                   is_demo=user["username"] == settings.demo_username)

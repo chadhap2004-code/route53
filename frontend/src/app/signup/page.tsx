@@ -1,7 +1,7 @@
 "use client";
 // Mocked sign-up in two steps, laid out like the console sign-up page: email and account name first,
-// then a password. Deliberately unbranded (neutral wordmark, no AWS logo or wording). The new account gets
-// its own copy of the demo hosted zones and is signed in straight away (same HttpOnly session cookie).
+// then a password. Deliberately unbranded (neutral wordmark, no AWS logo or wording). The new account starts
+// with no hosted zones and is signed in straight away (same HttpOnly session cookie).
 import { useQueryClient } from "@tanstack/react-query";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
@@ -72,7 +72,7 @@ export default function SignupPage() {
     try {
       const user = await api.signup(email.trim(), accountName.trim(), password);
       queryClient.clear(); // drop anything cached for a previously signed-in user
-      notify({ type: "success", content: `Account ${user.account_name} was created. The demo hosted zones were added to it.` });
+      notify({ type: "success", content: `Account ${user.account_name} was created. Create your first hosted zone to get started.` });
       router.replace("/route53/v2/hostedzones");
     } catch (e) {
       setLoading(false);

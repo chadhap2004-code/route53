@@ -64,5 +64,8 @@ def health(db: sqlite3.Connection = Depends(get_db)):
 
 @app.post("/api/demo/reset", status_code=204, tags=["meta"])
 def demo_reset(user: CurrentUser = Depends(current_user), db: sqlite3.Connection = Depends(get_db)):
-    """Restore the signed-in account's demo data (handy when several reviewers share the demo)."""
+    """Restore the demo account's data (handy when several reviewers share the demo). Other accounts own
+    their data, so they can't reset: that would wipe their zones and fill them with demo data."""
+    if not user.is_demo:
+        raise ApiError(403, "AccessDenied", "Only the shared demo account can be reset.")
     reset_account(db, user.account_id, user.username)

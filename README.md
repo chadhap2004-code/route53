@@ -8,7 +8,7 @@ A working clone of the AWS Route 53 console for managing hosted zones and DNS re
 
 ### Try these in 2 minutes
 
-1. Sign in (or **Create account** for your own copy of the demo data), then open **example.test** (an empty zone, so you can't break anything).
+1. Sign in with the demo account (or **Create account** for your own empty account), then open **example.test** (an empty zone, so you can't break anything).
 2. **Create record** → fill in `www`, value `192.0.2.1` → **Add another record** → fill in `api`, value `192.0.2.2` → **Create records**. A green notification shows the change ID.
 3. Try a bad value such as `999.1.1.1` in a record: the error appears in red inside the form, and nothing is saved.
 4. Tick both new records → **Delete records** → confirm in the modal.
@@ -24,7 +24,7 @@ A working clone of the AWS Route 53 console for managing hosted zones and DNS re
 |---|---|---|
 | **Modal:** delete hosted zone | Hosted zones → select a zone → **Delete** (or **Delete zone** on the zone page) | Type `delete` to confirm. Zones with records show a "still contains records" warning instead |
 | **Modal:** delete records | Zone page → tick one or more records → **Delete record(s)** | Lists the records. If you include the zone's own NS/SOA, the modal explains they can't be deleted |
-| **Modal:** reset demo data | **Demo account** (top right) → **Reset demo data** | Confirm with **Reset** |
+| **Modal:** reset demo data | **Demo account** (top right) → **Reset demo data** (demo account only) | Confirm with **Reset** |
 | **Modal:** keyboard shortcuts | Press <kbd>?</kbd>, or the **?** (help) icon in the top bar | Lists every shortcut |
 | **Notifications** (Flashbar) | Top of the page after any create, edit, delete or import | Green on success (record changes show the change ID, e.g. `C2682N5HXP0BZ4`); blue for info (try **Test record**). Validation errors show in red inside the form |
 | **Bonus:** import BIND zone file | Zone page → **Import zone file** | Upload or paste a file, **Preview** (nothing is saved), then **Import** |
@@ -34,7 +34,7 @@ A working clone of the AWS Route 53 console for managing hosted zones and DNS re
 | **Bonus:** bulk operations | Zone page → tick several records → **Delete records** | One atomic change batch: all are deleted or none. **Create record** → **Add another record** creates several at once |
 | Record details panel | Zone page → tick one record | Opens at the bottom; the gear switches it to the side |
 | Dashboard | Left nav → **Dashboard** | Same sections as the console. The "Try the bonus features" tip can be dismissed |
-| Sign-up | Sign-in page → **New here? Create account** | Email and account name, then a password. The new account gets its own copy of the demo zones |
+| Sign-up | Sign-in page → **New here? Create account** | Email and account name, then a password. The new account starts empty and only ever sees its own zones |
 | CI/CD | [CI/CD](#cicd) | GitHub Actions on every push; Railway and Vercel deploy from `main` |
 
 **Scope.** Hosted zones and DNS records are fully working. The **Dashboard** copies the console's layout (the hosted zone count is live, the rest is static) and **Health checks** shows the console's empty list. Traffic policies (a visual policy editor in the real console), Resolver, Profiles, Domains and DNS Firewall are "Coming soon" placeholders, as the brief allows.
@@ -71,7 +71,7 @@ I focused on two things:
 
 | Area | What works |
 |---|---|
-| **Auth (mocked)** | Two-step sign-in (email or username, then password) and two-step sign-up (email and account name, then password), logout, and a session that survives a refresh. A new account gets its own 12-digit account ID, its own copy of the demo zones, and its name in the top bar. Sessions live server-side (SQLite) behind an HttpOnly cookie. Middleware sends you to `/login` without a session, and from `/login` or `/signup` to the console with one. |
+| **Auth (mocked)** | Two-step sign-in (email or username, then password) and two-step sign-up (email and account name, then password), logout, and a session that survives a refresh. A new account gets its own 12-digit account ID, starts with no hosted zones, and shows its name in the top bar. Only the shared demo account has seed data and **Reset demo data**. Sessions live server-side (SQLite) behind an HttpOnly cookie. Middleware sends you to `/login` without a session, and from `/login` or `/signup` to the console with one. |
 | **Hosted zones** | List, search (name / ID / description) and filter by type in one "Filter by property or value" bar, sort, paginate, create (public or private with a VPC, plus tags), edit (description and tags; the name can't change), and delete (blocked while the zone still has records). |
 | **Records** | A, AAAA, CNAME, TXT, MX, NS, PTR, SRV and CAA, plus editing the zone's SOA/NS. List, search by name **or value**, filter by type / routing policy / alias in the console's "Filter by property or value" bar, sort and paginate. Create several records at once ("Add another record"), edit, and delete one or many. |
 | **Routing** | Simple and Weighted (weight + record ID), plus Alias records. |
@@ -217,7 +217,7 @@ Interactive docs: `http://localhost:8000/docs`. Errors are always `{"error": {"c
 
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/api/auth/signup` | `{email, account_name, password}`: create a user in a new account, seed the demo zones, and sign in (`409 EmailTaken` if the email exists) |
+| POST | `/api/auth/signup` | `{email, account_name, password}`: create a user in a new, empty account and sign in (`409 EmailTaken` if the email exists) |
 | POST | `/api/auth/login` | Sign in and set the HttpOnly session cookie |
 | POST | `/api/auth/logout` | Delete the session |
 | GET | `/api/auth/me` | Current user |
@@ -232,10 +232,10 @@ Interactive docs: `http://localhost:8000/docs`. Errors are always `{"error": {"c
 | GET | `/api/hosted-zones/{id}/changes` | Change history |
 | POST | `/api/hosted-zones/{id}/import` | BIND import (`dry_run: true` = preview, rolled back) |
 | GET | `/api/hosted-zones/{id}/export?format=bind\|json` | Download the zone |
-| POST | `/api/demo/reset` | Restore demo data for the signed-in account |
+| POST | `/api/demo/reset` | Restore the demo account's data (`403 AccessDenied` for any other account) |
 | GET | `/api/health` | Health check |
 
-Error codes used: `NotAuthenticated`, `InvalidCredentials`, `EmailTaken`, `NoSuchHostedZone`, `NoSuchRecordSet`, `InvalidDomainName`, `InvalidVPCId`, `ConflictingDomainExists`, `HostedZoneNotEmpty`, `InvalidChangeBatch`, `InvalidZoneFile`, `InvalidInput`.
+Error codes used: `NotAuthenticated`, `AccessDenied`, `InvalidCredentials`, `EmailTaken`, `NoSuchHostedZone`, `NoSuchRecordSet`, `InvalidDomainName`, `InvalidVPCId`, `ConflictingDomainExists`, `HostedZoneNotEmpty`, `InvalidChangeBatch`, `InvalidZoneFile`, `InvalidInput`.
 
 ---
 
@@ -313,7 +313,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md). In short: the **backend runs on Railway** wi
 - TypeScript types are maintained by hand to match the Pydantic models. Generating them from the OpenAPI schema (`openapi-typescript`) would remove that drift risk.
 - The **Alias = Yes/No** filter on the records table works on the current page only (the other filters run on the server). The match count next to the filter counts the current page, while the table header shows the server total. An `alias` query parameter would fix it.
 - **Reset demo data** deletes the account's zones in one transaction and reseeds them in separate ones, so a failure halfway through would leave partial demo data. Running the reset again fixes it.
-- Sign-up is open on the public demo with no rate limit, so anyone can create accounts (each gets about 50 demo rows). Fine for a demo; a real service would add rate limiting or email verification.
+- Sign-up is open on the public demo with no rate limit, so anyone can create accounts. Fine for a demo; a real service would add rate limiting or email verification.
 - No frontend unit tests. A Playwright smoke test (`e2e/smoke_test.py`) drives the main flows end to end against a running stack; it is not wired into CI yet.
 
 ---
