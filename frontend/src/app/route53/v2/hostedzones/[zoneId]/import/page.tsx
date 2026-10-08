@@ -12,6 +12,7 @@ import Form from "@cloudscape-design/components/form";
 import FormField from "@cloudscape-design/components/form-field";
 import Header from "@cloudscape-design/components/header";
 import SpaceBetween from "@cloudscape-design/components/space-between";
+import Spinner from "@cloudscape-design/components/spinner";
 import Table from "@cloudscape-design/components/table";
 import Textarea from "@cloudscape-design/components/textarea";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -69,12 +70,20 @@ export default function ImportZoneFilePage({ params }: { params: { zoneId: strin
   const name = zone.data ? displayName(zone.data.name) : zoneId;
   const err = previewMut.error || importMut.error;
   const toApply = preview ? preview.created + preview.updated : 0;
+  const breadcrumbs = [route53Crumb, zonesCrumb, { text: name, href: `/route53/v2/hostedzones/${zoneId}` }, { text: "Import zone file", href: "#" }];
+
+  if (!zone.data) {
+    return (
+      <ConsoleLayout breadcrumbs={breadcrumbs} contentType="form">
+        <ContentLayout header={<Header variant="h1">Import zone file</Header>}>
+          {zone.isError ? <Alert type="error">{errorMessage(zone.error)}</Alert> : <Spinner size="large" />}
+        </ContentLayout>
+      </ConsoleLayout>
+    );
+  }
 
   return (
-    <ConsoleLayout
-      breadcrumbs={[route53Crumb, zonesCrumb, { text: name, href: `/route53/v2/hostedzones/${zoneId}` }, { text: "Import zone file", href: "#" }]}
-      contentType="form"
-    >
+    <ConsoleLayout breadcrumbs={breadcrumbs} contentType="form">
       <ContentLayout header={<Header variant="h1" description="Paste or upload a zone file in BIND format. Records are validated with the same rules as the console before anything is saved.">Import zone file</Header>}>
         <Form
           errorText={
