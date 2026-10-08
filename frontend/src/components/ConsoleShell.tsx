@@ -152,8 +152,11 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
             },
             {
               type: "menu-dropdown",
-              text: me.data ? me.data.username : "…",
-              description: me.data ? `Account ID: ${formatAccount(me.data.account_id)}` : undefined,
+              // Like the console: account name with ID on the menu, the user underneath.
+              text: me.data ? me.data.account_name || me.data.username : "…",
+              description: me.data
+                ? `${me.data.account_name ? `${me.data.username} · ` : ""}Account ID: ${formatAccount(me.data.account_id)}`
+                : undefined,
               iconName: "user-profile",
               onItemClick: (e) => onMenu(e.detail.id),
               items: [

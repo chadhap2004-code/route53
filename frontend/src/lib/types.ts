@@ -15,6 +15,7 @@ export interface Page<T> {
 export interface User {
   username: string;
   account_id: string;
+  account_name: string;
 }
 
 export interface Tag {

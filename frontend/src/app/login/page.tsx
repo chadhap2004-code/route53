@@ -9,6 +9,11 @@ import { Suspense, useState } from "react";
 import styles from "@/components/auth.module.css";
 import { api, errorMessage } from "@/lib/api";
 
+// Only allow internal redirects (prevents open-redirects via ?next=https://evil.example).
+function safeNext(next: string | null): string {
+  return next && next.startsWith("/route53/") ? next : "/route53/v2/hostedzones";
+}
+
 function LoginForm() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -33,9 +38,7 @@ function LoginForm() {
     try {
       await api.login(username.trim(), password);
       queryClient.clear(); // drop anything cached for a previously signed-in user
-      const next = params.get("next");
-      // Only allow internal redirects (prevents open-redirects via ?next=https://evil.example).
-      router.replace(next && next.startsWith("/route53/") ? next : "/route53/v2/hostedzones");
+      router.replace(safeNext(params.get("next")));
     } catch (e) {
       setError(errorMessage(e));
       setLoading(false);
