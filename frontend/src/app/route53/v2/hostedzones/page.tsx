@@ -15,7 +15,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import ConsoleLayout, { route53Crumb, zonesCrumb } from "@/components/ConsoleLayout";
 import DeleteZoneModal from "@/components/DeleteZoneModal";
-import { api } from "@/lib/api";
+import { api, errorMessage } from "@/lib/api";
 import { displayName } from "@/lib/dns";
 import { readPref, writePref } from "@/lib/storage";
 import type { HostedZone } from "@/lib/types";
@@ -175,17 +175,25 @@ function HostedZonesTable() {
         }
         empty={
           <Box textAlign="center" color="inherit" padding="l">
-            <SpaceBetween size="xs">
-              <b>{q || type.value ? "No matches" : "No hosted zones"}</b>
-              <Box color="inherit">
-                {q || type.value ? "No hosted zones match the filter." : "You don't have any hosted zones yet."}
-              </Box>
-              {q || type.value ? (
-                <Button onClick={() => { setFilter(""); setType(TYPE_OPTIONS[0]); }}>Clear filter</Button>
-              ) : (
-                <Button onClick={() => router.push("/route53/v2/hostedzones/create")}>Create hosted zone</Button>
-              )}
-            </SpaceBetween>
+            {query.isError ? (
+              <SpaceBetween size="xs">
+                <b>Couldn&apos;t load hosted zones</b>
+                <Box color="inherit">{errorMessage(query.error)}</Box>
+                <Button onClick={() => query.refetch()}>Retry</Button>
+              </SpaceBetween>
+            ) : (
+              <SpaceBetween size="xs">
+                <b>{q || type.value ? "No matches" : "No hosted zones"}</b>
+                <Box color="inherit">
+                  {q || type.value ? "No hosted zones match the filter." : "You don't have any hosted zones yet."}
+                </Box>
+                {q || type.value ? (
+                  <Button onClick={() => { setFilter(""); setType(TYPE_OPTIONS[0]); }}>Clear filter</Button>
+                ) : (
+                  <Button onClick={() => router.push("/route53/v2/hostedzones/create")}>Create hosted zone</Button>
+                )}
+              </SpaceBetween>
+            )}
           </Box>
         }
       />

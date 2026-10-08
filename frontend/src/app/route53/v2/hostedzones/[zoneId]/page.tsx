@@ -253,22 +253,30 @@ function RecordsTable({
         }
         empty={
           <Box textAlign="center" color="inherit" padding="l">
-            <SpaceBetween size="xs">
-              <b>{filtered ? "No matches" : "No records"}</b>
-              <Box color="inherit">{filtered ? "No records match the filter." : "This hosted zone has no records."}</Box>
-              {filtered && (
-                <Button
-                  onClick={() => {
-                    setFilter("");
-                    setType(RECORD_TYPE_FILTER_OPTIONS[0]);
-                    setRouting(ROUTING_FILTER[0]);
-                    setAlias(ALIAS_FILTER[0]);
-                  }}
-                >
-                  Clear filters
-                </Button>
-              )}
-            </SpaceBetween>
+            {query.isError ? (
+              <SpaceBetween size="xs">
+                <b>Couldn&apos;t load records</b>
+                <Box color="inherit">{errorMessage(query.error)}</Box>
+                <Button onClick={() => query.refetch()}>Retry</Button>
+              </SpaceBetween>
+            ) : (
+              <SpaceBetween size="xs">
+                <b>{filtered ? "No matches" : "No records"}</b>
+                <Box color="inherit">{filtered ? "No records match the filter." : "This hosted zone has no records."}</Box>
+                {filtered && (
+                  <Button
+                    onClick={() => {
+                      setFilter("");
+                      setType(RECORD_TYPE_FILTER_OPTIONS[0]);
+                      setRouting(ROUTING_FILTER[0]);
+                      setAlias(ALIAS_FILTER[0]);
+                    }}
+                  >
+                    Clear filters
+                  </Button>
+                )}
+              </SpaceBetween>
+            )}
           </Box>
         }
       />
