@@ -42,7 +42,7 @@ export default function ConsoleLayout({
       splitPanel={splitPanel}
       splitPanelOpen={splitPanelOpen}
       onSplitPanelToggle={(e) => onSplitPanelToggle?.(e.detail.open)}
-      splitPanelPreferences={{ position: "side" }}
+      splitPanelPreferences={{ position: "bottom" }}
     />
   );
 }
