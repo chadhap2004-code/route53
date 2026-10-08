@@ -1,15 +1,14 @@
 "use client";
-// Hosted zones list: server-side search, type filter, sorting and pagination.
+// Hosted zones list: property filter (free text + Type), sorting and pagination, all done by the API.
 import Box from "@cloudscape-design/components/box";
 import Button from "@cloudscape-design/components/button";
 import CollectionPreferences from "@cloudscape-design/components/collection-preferences";
 import Header from "@cloudscape-design/components/header";
 import Link from "@cloudscape-design/components/link";
 import Pagination from "@cloudscape-design/components/pagination";
-import Select from "@cloudscape-design/components/select";
+import PropertyFilter from "@cloudscape-design/components/property-filter";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Table, { type TableProps } from "@cloudscape-design/components/table";
-import TextFilter from "@cloudscape-design/components/text-filter";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -17,40 +16,42 @@ import ConsoleLayout, { route53Crumb, zonesCrumb } from "@/components/ConsoleLay
 import DeleteZoneModal from "@/components/DeleteZoneModal";
 import { api, errorMessage } from "@/lib/api";
 import { displayName } from "@/lib/dns";
+import { EMPTY_QUERY, PROPERTY_FILTER_I18N, cleanQuery, queryWithText, tokenValue } from "@/lib/propertyFilter";
 import { readPref, writePref } from "@/lib/storage";
 import type { HostedZone } from "@/lib/types";
-import { useDebounced } from "@/lib/useDebounced";
 import { useFollow } from "@/lib/useFollow";
 
-const TYPE_OPTIONS = [
-  { value: "", label: "Type" },
-  { value: "public", label: "Public" },
-  { value: "private", label: "Private" },
+// Free text searches the name, ID and description; Type is the one property the API filters on.
+const FILTERING_PROPERTIES = [{ key: "type", propertyLabel: "Type", groupValuesLabel: "Type values", operators: ["="] as const }];
+const FILTERING_OPTIONS = [
+  { propertyKey: "type", value: "Public" },
+  { propertyKey: "type", value: "Private" },
 ];
 
 function HostedZonesTable() {
   const router = useRouter();
   const follow = useFollow();
   const params = useSearchParams();
-  const [filter, setFilter] = useState(params.get("q") ?? "");
-  const [type, setType] = useState(TYPE_OPTIONS[0]);
+  const [query, setQuery] = useState(() => queryWithText(params.get("q") ?? ""));
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [sorting, setSorting] = useState<{ field?: string; desc: boolean }>({ field: "name", desc: false });
   const [selected, setSelected] = useState<HostedZone[]>([]);
   const [deleting, setDeleting] = useState<HostedZone | null>(null);
-  const q = useDebounced(filter);
+  const q = tokenValue(query);
+  const type = tokenValue(query, "type").toLowerCase(); // the API takes "public" / "private"
+  const filtered = !!(q || type);
 
   useEffect(() => setPageSize(readPref("r53.zones.pageSize", 10)), []);
-  useEffect(() => setFilter(params.get("q") ?? ""), [params]);
+  useEffect(() => setQuery(queryWithText(params.get("q") ?? "")), [params]); // top-bar search
   useEffect(() => setPage(1), [q, type, pageSize, sorting]);
 
-  const query = useQuery({
-    queryKey: ["zones", { q, type: type.value, page, pageSize, sorting }],
+  const zones = useQuery({
+    queryKey: ["zones", { q, type, page, pageSize, sorting }],
     queryFn: () =>
       api.listZones({
         q,
-        type: type.value,
+        type,
         page,
         page_size: pageSize,
         sort: sorting.field,
@@ -59,8 +60,8 @@ function HostedZonesTable() {
     placeholderData: keepPreviousData, // keep showing the old page while the next one loads
   });
 
-  const items = query.data?.items ?? [];
-  const total = query.data?.total ?? 0;
+  const items = zones.data?.items ?? [];
+  const total = zones.data?.total ?? 0;
   const one = selected.length === 1 ? selected[0] : null;
 
   const columns: TableProps.ColumnDefinition<HostedZone>[] = [
@@ -90,7 +91,7 @@ function HostedZonesTable() {
         trackBy="id"
         items={items}
         columnDefinitions={columns}
-        loading={query.isLoading}
+        loading={zones.isLoading}
         loadingText="Loading hosted zones"
         selectionType="single"
         selectedItems={selected}
@@ -107,11 +108,11 @@ function HostedZonesTable() {
         header={
           <Header
             variant="awsui-h1-sticky"
-            counter={query.data ? `(${total})` : undefined}
+            counter={zones.data ? `(${total})` : undefined}
             description="A hosted zone is a container for records, which include information about how you want to route traffic for a domain (such as example.com) and all of its subdomains."
             actions={
               <SpaceBetween direction="horizontal" size="xs">
-                <Button iconName="refresh" ariaLabel="Refresh hosted zones" loading={query.isFetching} onClick={() => query.refetch()} />
+                <Button iconName="refresh" ariaLabel="Refresh hosted zones" loading={zones.isFetching} onClick={() => zones.refetch()} />
                 <Button disabled={!one} onClick={() => one && router.push(`/route53/v2/hostedzones/${one.id}`)}>
                   View details
                 </Button>
@@ -131,23 +132,20 @@ function HostedZonesTable() {
           </Header>
         }
         filter={
-          <SpaceBetween direction="horizontal" size="xs">
-            <div data-shortcut="search" style={{ minWidth: 280 }}>
-              <TextFilter
-                filteringText={filter}
-                filteringPlaceholder="Filter hosted zones by name, ID or description"
-                filteringAriaLabel="Filter hosted zones"
-                countText={q && !query.isError ? `${total} match${total === 1 ? "" : "es"}` : undefined}
-                onChange={(e) => setFilter(e.detail.filteringText)}
-              />
-            </div>
-            <Select
-              selectedOption={type}
-              options={TYPE_OPTIONS}
-              onChange={(e) => setType(e.detail.selectedOption as (typeof TYPE_OPTIONS)[number])}
-              ariaLabel="Filter by type"
+          <div data-shortcut="search">
+            <PropertyFilter
+              query={query}
+              onChange={(e) => setQuery(cleanQuery(e.detail, FILTERING_OPTIONS))}
+              filteringProperties={FILTERING_PROPERTIES}
+              filteringOptions={FILTERING_OPTIONS}
+              filteringPlaceholder="Filter hosted zones by property or value"
+              filteringAriaLabel="Filter hosted zones"
+              countText={filtered && !zones.isError ? `${total} match${total === 1 ? "" : "es"}` : undefined}
+              hideOperations
+              expandToViewport
+              i18nStrings={PROPERTY_FILTER_I18N}
             />
-          </SpaceBetween>
+          </div>
         }
         pagination={
           <Pagination
@@ -176,20 +174,20 @@ function HostedZonesTable() {
         }
         empty={
           <Box textAlign="center" color="inherit" padding="l">
-            {query.isError ? (
+            {zones.isError ? (
               <SpaceBetween size="xs">
                 <b>Couldn&apos;t load hosted zones</b>
-                <Box color="inherit">{errorMessage(query.error)}</Box>
-                <Button onClick={() => query.refetch()}>Retry</Button>
+                <Box color="inherit">{errorMessage(zones.error)}</Box>
+                <Button onClick={() => zones.refetch()}>Retry</Button>
               </SpaceBetween>
             ) : (
               <SpaceBetween size="xs">
-                <b>{q || type.value ? "No matches" : "No hosted zones"}</b>
+                <b>{filtered ? "No matches" : "No hosted zones"}</b>
                 <Box color="inherit">
-                  {q || type.value ? "No hosted zones match the filter." : "You don't have any hosted zones yet."}
+                  {filtered ? "No hosted zones match the filter." : "You don't have any hosted zones yet."}
                 </Box>
-                {q || type.value ? (
-                  <Button onClick={() => { setFilter(""); setType(TYPE_OPTIONS[0]); }}>Clear filter</Button>
+                {filtered ? (
+                  <Button onClick={() => setQuery(EMPTY_QUERY)}>Clear filter</Button>
                 ) : (
                   <Button onClick={() => router.push("/route53/v2/hostedzones/create")}>Create hosted zone</Button>
                 )}

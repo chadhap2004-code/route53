@@ -86,6 +86,7 @@ async def main():
         print("import ok")
         # search records by value
         await pg.fill("[data-shortcut=search] input", "192.0.2.2")
+        await pg.press("[data-shortcut=search] input", "Enter")  # the property filter applies on Enter
         await pg.wait_for_selector("text=1 match")
         print("record search ok")
         # delete zone blocked
@@ -103,6 +104,7 @@ async def main():
         await pg.goto(B + "/route53/v2/hostedzones")
         await pg.wait_for_selector("text=example.net")
         await pg.fill("[data-shortcut=search] input", ZONE)
+        await pg.press("[data-shortcut=search] input", "Enter")
         await pg.wait_for_selector("text=/\\d+ match/")
         await pg.locator("h1").first.click()
         await pg.keyboard.press("t")
