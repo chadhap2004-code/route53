@@ -111,6 +111,7 @@ function HostedZonesTable() {
             description="A hosted zone is a container for records, which include information about how you want to route traffic for a domain (such as example.com) and all of its subdomains."
             actions={
               <SpaceBetween direction="horizontal" size="xs">
+                <Button iconName="refresh" ariaLabel="Refresh hosted zones" loading={query.isFetching} onClick={() => query.refetch()} />
                 <Button disabled={!one} onClick={() => one && router.push(`/route53/v2/hostedzones/${one.id}`)}>
                   View details
                 </Button>

@@ -185,6 +185,7 @@ function RecordsTable({
             counter={query.data ? (selected.length ? `(${selected.length}/${total})` : `(${total})`) : undefined}
             actions={
               <SpaceBetween direction="horizontal" size="xs">
+                <Button iconName="refresh" ariaLabel="Refresh records" loading={query.isFetching} onClick={() => query.refetch()} />
                 <Button disabled={!one} onClick={() => one && router.push(`/route53/v2/hostedzones/${zone.id}/records/${one.id}/edit`)}>
                   Edit record
                 </Button>
