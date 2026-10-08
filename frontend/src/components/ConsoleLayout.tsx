@@ -26,6 +26,7 @@ export default function ConsoleLayout({
   onSplitPanelToggle,
 }: Props) {
   const [navOpen, setNavOpen] = useState(true);
+  const [splitPanelPosition, setSplitPanelPosition] = useState<"bottom" | "side">("bottom");
   const { items } = useNotifications();
   const follow = useFollow();
   return (
@@ -42,7 +43,8 @@ export default function ConsoleLayout({
       splitPanel={splitPanel}
       splitPanelOpen={splitPanelOpen}
       onSplitPanelToggle={(e) => onSplitPanelToggle?.(e.detail.open)}
-      splitPanelPreferences={{ position: "bottom" }}
+      splitPanelPreferences={{ position: splitPanelPosition }}
+      onSplitPanelPreferencesChange={(e) => setSplitPanelPosition(e.detail.position)}
     />
   );
 }

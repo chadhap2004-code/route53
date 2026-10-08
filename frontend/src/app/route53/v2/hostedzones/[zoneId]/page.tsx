@@ -316,7 +316,6 @@ export default function HostedZoneDetailPage({ params }: { params: { zoneId: str
     <SplitPanel
       header={one ? displayName(one.name) : selected.length > 1 ? `${selected.length} records selected` : "Record details"}
       closeBehavior="collapse"
-      hidePreferencesButton
       i18nStrings={{
         closeButtonAriaLabel: "Close panel",
         openButtonAriaLabel: "Open panel",
