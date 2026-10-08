@@ -1,53 +1,196 @@
 "use client";
+// Route 53 dashboard, laid out like the console's: service summary, register domain, notifications,
+// more resources and service health. Only the hosted zone count is live; the rest is static.
+import Alert from "@cloudscape-design/components/alert";
 import Box from "@cloudscape-design/components/box";
 import Button from "@cloudscape-design/components/button";
 import ColumnLayout from "@cloudscape-design/components/column-layout";
 import Container from "@cloudscape-design/components/container";
 import ContentLayout from "@cloudscape-design/components/content-layout";
+import FormField from "@cloudscape-design/components/form-field";
 import Header from "@cloudscape-design/components/header";
+import Icon from "@cloudscape-design/components/icon";
+import Input from "@cloudscape-design/components/input";
 import Link from "@cloudscape-design/components/link";
+import Pagination from "@cloudscape-design/components/pagination";
 import SpaceBetween from "@cloudscape-design/components/space-between";
+import Table from "@cloudscape-design/components/table";
+import TextFilter from "@cloudscape-design/components/text-filter";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useState, type ReactNode } from "react";
 import ConsoleLayout, { route53Crumb } from "@/components/ConsoleLayout";
+import { useNotifications } from "@/components/Notifications";
 import { api } from "@/lib/api";
 import { useFollow } from "@/lib/useFollow";
 
-function Card({ title, body, action }: { title: string; body: React.ReactNode; action?: React.ReactNode }) {
+const DOCS = "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Welcome.html";
+
+const MORE_RESOURCES = [
+  { text: "Documentation", href: "https://docs.aws.amazon.com/route53/" },
+  { text: "API reference", href: "https://docs.aws.amazon.com/Route53/latest/APIReference/Welcome.html" },
+  { text: "FAQs", href: "https://aws.amazon.com/route53/faqs/" },
+  { text: "Forum - DNS and health checks", href: "https://repost.aws/search/content?globalSearch=Route%2053%20DNS%20health%20checks" },
+  { text: "Forum - Domain name registration", href: "https://repost.aws/search/content?globalSearch=Route%2053%20domain%20registration" },
+  { text: "Request a limit increase", href: "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSLimitations.html" },
+];
+
+function Summary({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
-    <Container header={<Header variant="h2">{title}</Header>} fitHeight>
-      <SpaceBetween size="m">
-        {body}
-        {action}
+    <Box textAlign="center">
+      <SpaceBetween size="xs">
+        <Box variant="h3" padding="n">
+          {title}
+        </Box>
+        {description && <Box fontSize="body-s">{description}</Box>}
+        {children}
       </SpaceBetween>
-    </Container>
+    </Box>
   );
 }
 
 export default function DashboardPage() {
   const router = useRouter();
   const follow = useFollow();
+  const { notify } = useNotifications();
   const zones = useQuery({ queryKey: ["zones", "count"], queryFn: () => api.listZones({ page_size: 1 }) });
+  const [domain, setDomain] = useState("");
+  const [notificationFilter, setNotificationFilter] = useState("");
+
   return (
     <ConsoleLayout breadcrumbs={[route53Crumb, { text: "Dashboard", href: "/route53/v2/dashboard" }]}>
-      <ContentLayout header={<Header variant="h1">Route 53 Dashboard</Header>}>
-        <ColumnLayout columns={2}>
-          <Card
-            title="DNS management"
-            body={
-              <SpaceBetween size="xxs">
-                <Box variant="awsui-value-large">{zones.data?.total ?? "–"}</Box>
-                <Link href="/route53/v2/hostedzones" onFollow={follow}>
-                  Hosted zones
-                </Link>
-              </SpaceBetween>
+      <ContentLayout
+        header={
+          <Header
+            variant="h1"
+            info={
+              <Link variant="info" href={DOCS} target="_blank" rel="noopener noreferrer">
+                Info
+              </Link>
             }
-            action={<Button onClick={() => router.push("/route53/v2/hostedzones/create")}>Create hosted zone</Button>}
+          >
+            Route 53 Dashboard
+          </Header>
+        }
+      >
+        <SpaceBetween size="l">
+          <Alert type="info" header="Try the bonus features">
+            Open a hosted zone to <b>Import zone file</b> or <b>Export</b> it as BIND or JSON. Press <kbd>?</kbd> for
+            keyboard shortcuts and <kbd>t</kbd> for dark mode.
+          </Alert>
+
+          <Container>
+            <ColumnLayout columns={4}>
+              <Summary
+                title="DNS management"
+                description="A hosted zone tells Route 53 how to respond to DNS queries for a domain such as example.com."
+              >
+                <Button onClick={() => router.push("/route53/v2/hostedzones/create")}>Create hosted zone</Button>
+                <Link href="/route53/v2/hostedzones" onFollow={follow}>
+                  {zones.data ? `${zones.data.total} hosted zone${zones.data.total === 1 ? "" : "s"}` : "Hosted zones"}
+                </Link>
+              </Summary>
+              <Summary
+                title="Availability monitoring"
+                description="Health checks monitor your applications and web resources, and direct DNS queries to healthy resources."
+              >
+                <Button onClick={() => router.push("/route53/v2/healthchecks")}>Create health check</Button>
+              </Summary>
+              <Summary
+                title="Traffic management"
+                description="A visual tool that lets you easily create policies for multiple endpoints in complex configurations."
+              >
+                <Button onClick={() => router.push("/route53/v2/trafficpolicies")}>Create policy</Button>
+              </Summary>
+              <Summary title="Domain registration">
+                <Box fontSize="heading-l" fontWeight="bold">
+                  0
+                </Box>
+                <Box>Domains</Box>
+              </Summary>
+            </ColumnLayout>
+          </Container>
+
+          <Container header={<Header variant="h2">Register domain</Header>}>
+            <SpaceBetween size="s">
+              <Box>
+                Find and register an available domain, or{" "}
+                <Link href="/route53/v2/domains" onFollow={follow}>
+                  transfer your existing domains
+                </Link>{" "}
+                to Route 53.
+              </Box>
+              <FormField
+                stretch
+                constraintText="Each label (each part between dots) can be up to 63 characters long and must start with a-z or 0-9. Maximum length: 255 characters, including dots. Valid characters: a-z, 0-9, and - (hyphen)"
+              >
+                <Input
+                  value={domain}
+                  placeholder="Enter a domain name"
+                  ariaLabel="Domain name"
+                  onChange={(e) => setDomain(e.detail.value)}
+                />
+              </FormField>
+              <Button onClick={() => notify({ type: "info", content: "Domain registration is outside the scope of this clone." })}>
+                Check
+              </Button>
+            </SpaceBetween>
+          </Container>
+
+          <Table
+            variant="container"
+            items={[]}
+            loading={zones.isFetching}
+            loadingText="Loading notifications"
+            columnDefinitions={[
+              { id: "resource", header: "Resource", cell: () => null },
+              { id: "status", header: "Status", cell: () => null },
+              { id: "updated", header: "Last update", cell: () => null, sortingField: "updated" },
+            ]}
+            header={
+              <Header
+                variant="h2"
+                actions={<Button iconName="refresh" variant="icon" ariaLabel="Refresh notifications" onClick={() => zones.refetch()} />}
+              >
+                Notifications
+              </Header>
+            }
+            filter={
+              <TextFilter
+                filteringText={notificationFilter}
+                filteringPlaceholder="Find notifications"
+                filteringAriaLabel="Find notifications"
+                onChange={(e) => setNotificationFilter(e.detail.filteringText)}
+              />
+            }
+            pagination={<Pagination currentPageIndex={1} pagesCount={1} />}
+            empty={<Box textAlign="center" color="inherit">No notifications to display</Box>}
           />
-          <Card title="Traffic management" body={<Box color="text-body-secondary">Coming soon</Box>} />
-          <Card title="Availability monitoring" body={<Box color="text-body-secondary">Coming soon</Box>} />
-          <Card title="Domain registration" body={<Box color="text-body-secondary">Coming soon</Box>} />
-        </ColumnLayout>
+
+          <Container
+            header={
+              <Header variant="h2">
+                More resources <Icon name="external" />
+              </Header>
+            }
+          >
+            <ColumnLayout columns={1} borders="horizontal">
+              {MORE_RESOURCES.map((r) => (
+                <Link key={r.text} href={r.href} target="_blank" rel="noopener noreferrer">
+                  {r.text}
+                </Link>
+              ))}
+            </ColumnLayout>
+          </Container>
+
+          <Container header={<Header variant="h2">Service health</Header>}>
+            To view the current status of Route 53, see the{" "}
+            <Link href="https://health.aws.amazon.com/health/status" external>
+              AWS Service Health Dashboard
+            </Link>
+            .
+          </Container>
+        </SpaceBetween>
       </ContentLayout>
     </ConsoleLayout>
   );
