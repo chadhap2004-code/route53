@@ -11,6 +11,10 @@ Browser ──▶ Vercel (Next.js frontend) ──/api/* rewrite──▶ Railwa
 
 ---
 
+**Auto-deploy is on for both services.** Railway and Vercel are connected to the GitHub repo and redeploy on every push to `main`. CI (`.github/workflows/ci.yml`) runs on the same push. In Railway this is **Settings → Source → Branch: main**; in Vercel it is the Production Branch (`main`) under **Settings → Git**.
+
+---
+
 ## 1. Push the code to GitHub
 
 ```bash
