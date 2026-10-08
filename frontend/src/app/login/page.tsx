@@ -128,7 +128,6 @@ function LoginForm() {
           </a>
           .
         </p>
-        <p>Next.js · FastAPI · SQLite</p>
       </footer>
     </div>
   );
