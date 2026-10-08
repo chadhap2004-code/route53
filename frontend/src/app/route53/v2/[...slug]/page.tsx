@@ -14,6 +14,11 @@ const TITLES: Record<string, string> = {
   "resolver/outbound": "Outbound endpoints",
   "resolver/rules": "Resolver rules",
   "resolver/querylogging": "Query logging",
+  "resolver/outposts": "Outposts",
+  globalresolvers: "Global resolvers",
+  shareddnsviews: "Shared DNS views",
+  dnsfirewall: "DNS Firewall",
+  recoverycontroller: "Application Recovery Controller",
   "firewall/rulegroups": "DNS Firewall rule groups",
   "firewall/domainlists": "DNS Firewall domain lists",
 };
