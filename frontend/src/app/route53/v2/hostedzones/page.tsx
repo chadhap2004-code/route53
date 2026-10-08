@@ -43,7 +43,7 @@ function HostedZonesTable() {
 
   useEffect(() => setPageSize(readPref("r53.zones.pageSize", 10)), []);
   useEffect(() => setFilter(params.get("q") ?? ""), [params]);
-  useEffect(() => setPage(1), [q, type, pageSize]);
+  useEffect(() => setPage(1), [q, type, pageSize, sorting]);
 
   const query = useQuery({
     queryKey: ["zones", { q, type: type.value, page, pageSize, sorting }],
