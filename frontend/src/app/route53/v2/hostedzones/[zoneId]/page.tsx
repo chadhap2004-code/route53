@@ -49,43 +49,41 @@ const DEFAULT_VISIBLE = ["name", "type", "routing", "differentiator", "alias", "
 
 function ZoneDetails({ zone, onEdit }: { zone: HostedZone; onEdit: () => void }) {
   return (
-    <Container>
-      <ExpandableSection
-        variant="footer"
-        headerText="Hosted zone details"
-        headerActions={<Button onClick={onEdit}>Edit hosted zone</Button>}
-        defaultExpanded={false}
-      >
-        <KeyValuePairs
-          columns={3}
-          items={[
-            { label: "Hosted zone name", value: displayName(zone.name) },
-            { label: "Hosted zone ID", value: <CopyToClipboard variant="inline" textToCopy={zone.id} copyErrorText="Failed to copy" copySuccessText="Hosted zone ID copied" /> },
-            { label: "Description", value: zone.comment || "-" },
-            { label: "Type", value: zone.type === "private" ? "Private hosted zone" : "Public hosted zone" },
-            { label: "Record count", value: zone.record_count },
-            { label: "Query log", value: "-" },
-            {
-              label: "Name servers",
-              value: (
-                <SpaceBetween size="xxxs">
-                  {zone.name_servers.map((ns) => (
-                    <span key={ns}>{ns}</span>
-                  ))}
-                  {zone.name_servers.length > 0 && (
-                    <CopyToClipboard variant="inline" textToCopy={zone.name_servers.join("\n")} textToDisplay="Copy all" copyErrorText="Failed to copy" copySuccessText="Name servers copied" />
-                  )}
-                </SpaceBetween>
-              ),
-            },
-            ...(zone.type === "private"
-              ? [{ label: "VPCs", value: zone.vpcs.map((v) => `${v.vpc_id} (${v.region})`).join(", ") || "-" }]
-              : []),
-            { label: "Created", value: formatDate(zone.created_at) },
-          ]}
-        />
-      </ExpandableSection>
-    </Container>
+    <ExpandableSection
+      variant="container"
+      headerText="Hosted zone details"
+      headerActions={<Button onClick={onEdit}>Edit hosted zone</Button>}
+      defaultExpanded={false}
+    >
+      <KeyValuePairs
+        columns={3}
+        items={[
+          { label: "Hosted zone name", value: displayName(zone.name) },
+          { label: "Hosted zone ID", value: <CopyToClipboard variant="inline" textToCopy={zone.id} copyErrorText="Failed to copy" copySuccessText="Hosted zone ID copied" /> },
+          { label: "Description", value: zone.comment || "-" },
+          { label: "Type", value: zone.type === "private" ? "Private hosted zone" : "Public hosted zone" },
+          { label: "Record count", value: zone.record_count },
+          { label: "Query log", value: "-" },
+          {
+            label: "Name servers",
+            value: (
+              <SpaceBetween size="xxxs">
+                {zone.name_servers.map((ns) => (
+                  <span key={ns}>{ns}</span>
+                ))}
+                {zone.name_servers.length > 0 && (
+                  <CopyToClipboard variant="inline" textToCopy={zone.name_servers.join("\n")} textToDisplay="Copy all" copyErrorText="Failed to copy" copySuccessText="Name servers copied" />
+                )}
+              </SpaceBetween>
+            ),
+          },
+          ...(zone.type === "private"
+            ? [{ label: "VPCs", value: zone.vpcs.map((v) => `${v.vpc_id} (${v.region})`).join(", ") || "-" }]
+            : []),
+          { label: "Created", value: formatDate(zone.created_at) },
+        ]}
+      />
+    </ExpandableSection>
   );
 }
 
