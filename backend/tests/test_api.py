@@ -246,6 +246,15 @@ def test_record_search_by_name_and_value(client):
     assert mx["total"] == 1
 
 
+def test_demo_reset_restores_seed_data(client, zone):
+    assert client.get("/api/hosted-zones").json()["total"] == 8  # 7 seeded + the test zone
+    assert client.post("/api/demo/reset").status_code == 204
+    zones = client.get("/api/hosted-zones", params={"page_size": 100}).json()["items"]
+    assert len(zones) == 7 and zone["id"] not in {z["id"] for z in zones}
+    assert client.post("/api/auth/logout").status_code == 204
+    assert client.post("/api/demo/reset").status_code == 401
+
+
 def test_accounts_are_isolated(client):
     other = client.get("/api/hosted-zones/Z0DOESNOTEXIST0000")
     assert other.status_code == 404 and other.json()["error"]["code"] == "NoSuchHostedZone"
