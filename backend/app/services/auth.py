@@ -53,6 +53,35 @@ def login(conn: sqlite3.Connection, username: str, password: str) -> tuple[str, 
     # Same error for unknown user and wrong password, so the API doesn't reveal which usernames exist.
     if not user or not verify_password(password, user["password_hash"]):
         raise ApiError(401, "InvalidCredentials", "Your authentication information is incorrect. Please try again.")
+    return create_session(conn, user["id"]), user
+
+
+def signup(conn: sqlite3.Connection, username: str, password: str) -> sqlite3.Row:
+    """Create a user with its own new mocked AWS account. The router then seeds demo zones and logs it in."""
+    if conn.execute("SELECT 1 FROM users WHERE username = ?", (username,)).fetchone():
+        raise ApiError(409, "UsernameTaken", f"The username {username} is already taken. Choose another one.")
+    account_id = _new_account_id(conn)
+    try:
+        with transaction(conn):
+            conn.execute(
+                "INSERT INTO users (username, password_hash, account_id) VALUES (?, ?, ?)",
+                (username, hash_password(password), account_id),
+            )
+    except sqlite3.IntegrityError:
+        # Two sign-ups with the same name at the same moment: the UNIQUE constraint decides.
+        raise ApiError(409, "UsernameTaken", f"The username {username} is already taken. Choose another one.") from None
+    return conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+
+
+def _new_account_id(conn: sqlite3.Connection) -> str:
+    """A random 12-digit mocked AWS account id that no other user has."""
+    while True:
+        account_id = "".join(secrets.choice("0123456789") for _ in range(12))
+        if not conn.execute("SELECT 1 FROM users WHERE account_id = ?", (account_id,)).fetchone():
+            return account_id
+
+
+def create_session(conn: sqlite3.Connection, user_id: int) -> str:
     token = secrets.token_urlsafe(32)
     expires = _now() + timedelta(hours=settings.session_ttl_hours)
     with transaction(conn):
@@ -60,9 +89,9 @@ def login(conn: sqlite3.Connection, username: str, password: str) -> tuple[str, 
         conn.execute("DELETE FROM sessions WHERE expires_at < ?", (_iso(_now()),))
         conn.execute(
             "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)",
-            (token, user["id"], _iso(expires)),
+            (token, user_id, _iso(expires)),
         )
-    return token, user
+    return token
 
 
 def logout(conn: sqlite3.Connection, token: str | None) -> None:

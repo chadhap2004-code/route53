@@ -7,15 +7,14 @@ from fastapi import APIRouter, Depends, Request, Response
 from ..config import settings
 from ..db import get_db
 from ..deps import CurrentUser, current_user
-from ..schemas import LoginIn, UserOut
+from ..schemas import LoginIn, SignupIn, UserOut
+from ..seed import seed_account
 from ..services import auth as auth_service
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
-@router.post("/login", response_model=UserOut)
-def login(body: LoginIn, response: Response, db: sqlite3.Connection = Depends(get_db)) -> UserOut:
-    token, user = auth_service.login(db, body.username.strip(), body.password)
+def _set_session_cookie(response: Response, token: str) -> None:
     response.set_cookie(
         key=settings.session_cookie_name,
         value=token,
@@ -25,6 +24,21 @@ def login(body: LoginIn, response: Response, db: sqlite3.Connection = Depends(ge
         secure=settings.cookie_secure,
         path="/",
     )
+
+
+@router.post("/login", response_model=UserOut)
+def login(body: LoginIn, response: Response, db: sqlite3.Connection = Depends(get_db)) -> UserOut:
+    token, user = auth_service.login(db, body.username.strip(), body.password)
+    _set_session_cookie(response, token)
+    return UserOut(username=user["username"], account_id=user["account_id"])
+
+
+@router.post("/signup", response_model=UserOut, status_code=201)
+def signup(body: SignupIn, response: Response, db: sqlite3.Connection = Depends(get_db)) -> UserOut:
+    """Mocked sign-up: a new user in a new account, seeded with the demo zones, then signed in."""
+    user = auth_service.signup(db, body.username, body.password)
+    seed_account(db, user["account_id"], user["username"])
+    _set_session_cookie(response, auth_service.create_session(db, user["id"]))
     return UserOut(username=user["username"], account_id=user["account_id"])
 
 

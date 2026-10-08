@@ -1,6 +1,8 @@
 """API tests: auth, hosted zones, records and Route53 rules end to end."""
 import time
 
+import pytest
+
 from .conftest import zone_id_by_name
 
 
@@ -34,6 +36,63 @@ def test_logout_invalidates_session(client):
     assert client.get("/api/auth/me").status_code == 200
     assert client.post("/api/auth/logout").status_code == 204
     assert client.get("/api/auth/me").status_code == 401
+
+
+def _signup_client():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    return TestClient(app)
+
+
+def test_signup_creates_account_with_demo_zones_and_signs_in(client):
+    with _signup_client() as new:
+        r = new.post("/api/auth/signup", json={"username": "new-user_1", "password": "password123"})
+        assert r.status_code == 201, r.text
+        user = r.json()
+        assert user["username"] == "new-user_1" and len(user["account_id"]) == 12 and user["account_id"].isdigit()
+        assert user["account_id"] != client.get("/api/auth/me").json()["account_id"]
+        cookie = r.headers["set-cookie"].lower()
+        assert "httponly" in cookie and "samesite=lax" in cookie
+        assert new.get("/api/auth/me").json()["username"] == "new-user_1"  # already signed in
+        assert new.get("/api/hosted-zones").json()["total"] == 7  # seeded with the demo zones
+    with _signup_client() as again:  # and the password works for a normal login
+        assert again.post("/api/auth/login", json={"username": "new-user_1", "password": "password123"}).status_code == 200
+
+
+def test_signup_rejects_taken_username(client):
+    with _signup_client() as new:
+        r = new.post("/api/auth/signup", json={"username": "demo", "password": "password123"})
+        assert r.status_code == 409 and r.json()["error"]["code"] == "UsernameTaken"
+        assert new.post("/api/auth/signup", json={"username": "twice", "password": "password123"}).status_code == 201
+        r = new.post("/api/auth/signup", json={"username": "twice", "password": "password123"})
+        assert r.status_code == 409 and r.json()["error"]["code"] == "UsernameTaken"
+
+
+@pytest.mark.parametrize("username,password", [
+    ("ab", "password123"),            # too short
+    ("a" * 33, "password123"),        # too long
+    ("Upper", "password123"),         # upper case
+    ("has space", "password123"),     # invalid character
+    ("bad.dot", "password123"),       # invalid character
+    ("valid_name", "short"),          # password under 8 characters
+])
+def test_signup_rejects_bad_input(client, username, password):
+    with _signup_client() as new:
+        r = new.post("/api/auth/signup", json={"username": username, "password": password})
+        assert r.status_code == 422 and r.json()["error"]["code"] == "InvalidInput"
+        assert new.get("/api/auth/me").status_code == 401  # nothing was created or signed in
+
+
+def test_signed_up_account_cannot_see_other_accounts_zones(client):
+    demo_zone = zone_id_by_name(client, "example.com.")
+    with _signup_client() as new:
+        new.post("/api/auth/signup", json={"username": "isolated", "password": "password123"})
+        own = new.get("/api/hosted-zones", params={"page_size": 100}).json()["items"]
+        assert demo_zone not in {z["id"] for z in own}  # same zone names, different zones
+        assert new.get(f"/api/hosted-zones/{demo_zone}").status_code == 404
+        assert new.delete(f"/api/hosted-zones/{demo_zone}").status_code == 404
+        new_zone = next(z["id"] for z in own if z["name"] == "example.com.")
+    assert client.get(f"/api/hosted-zones/{new_zone}").status_code == 404  # and the other way round
 
 
 # ------------------------------------------------------------------ zones

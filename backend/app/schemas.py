@@ -32,6 +32,11 @@ class LoginIn(BaseModel):
     password: str = Field(min_length=1, max_length=128)
 
 
+class SignupIn(BaseModel):
+    username: str = Field(pattern=r"^[a-z0-9_-]{3,32}$", description="3-32 characters: a-z, 0-9, _ or -")
+    password: str = Field(min_length=8, max_length=128)
+
+
 class UserOut(BaseModel):
     username: str
     account_id: str
