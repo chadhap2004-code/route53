@@ -18,11 +18,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [dark]);
 
   const toggle = useCallback(() => {
-    setDark((d) => {
-      writePref("r53.dark", !d);
-      return !d;
-    });
-  }, []);
+    writePref("r53.dark", !dark);
+    setDark(!dark);
+  }, [dark]);
 
   return <ThemeContext.Provider value={{ dark, toggle }}>{children}</ThemeContext.Provider>;
 }
