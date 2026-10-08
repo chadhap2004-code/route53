@@ -53,6 +53,17 @@ def test_import_skips_existing_unless_overwrite(client, zone):
     assert any(row["name"] == "mx.unit-test.example." and row["action"] == "UPSERT" for row in r["rows"])
 
 
+def test_import_skips_names_with_weighted_records(client, zone):
+    zid = zone["id"]
+    client.post(f"/api/hosted-zones/{zid}/records", json={"name": "w", "type": "A", "routing_policy": "weighted",
+                                                         "set_identifier": "a", "weight": 1, "values": ["192.0.2.1"]})
+    text = "w 300 IN A 192.0.2.9\nok 300 IN A 192.0.2.8\n"
+    r = client.post(f"/api/hosted-zones/{zid}/import", json={"zone_file": text, "dry_run": False, "overwrite": True})
+    assert r.status_code == 200, r.text
+    actions = {row["name"]: row["action"] for row in r.json()["rows"]}
+    assert actions == {"w.unit-test.example.": "SKIP", "ok.unit-test.example.": "CREATE"}
+
+
 def test_import_invalid_file(client, zone):
     r = client.post(f"/api/hosted-zones/{zone['id']}/import", json={"zone_file": "@ IN A not-an-ip"})
     assert r.status_code == 400 and r.json()["error"]["code"] == "InvalidZoneFile"

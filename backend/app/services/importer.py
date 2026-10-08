@@ -19,10 +19,10 @@ def import_zone_file(
     submitted_by: str,
 ) -> ImportResult:
     parsed = parse_zone_file(text, zone["name"])
-    existing = {
-        (r["name"], r["type"])
-        for r in conn.execute("SELECT name, type FROM record_sets WHERE zone_id = ? AND set_identifier = ''", (zone["id"],))
-    }
+    existing: set[tuple[str, str]] = set()
+    weighted: set[tuple[str, str]] = set()
+    for r in conn.execute("SELECT name, type, routing_policy FROM record_sets WHERE zone_id = ?", (zone["id"],)):
+        (weighted if r["routing_policy"] == "weighted" else existing).add((r["name"], r["type"]))
 
     rows: list[ImportRow] = []
     changes: list[Change] = []
@@ -38,6 +38,11 @@ def import_zone_file(
         if p["skip_reason"]:
             rows.append(ImportRow(action="SKIP", name=p["name"], type=p["type"], ttl=p["ttl"], values=values,
                                   reason=p["skip_reason"]))
+            continue
+        if (p["name"], p["type"]) in weighted:
+            # A zone file has no routing policies, so it can't replace weighted records (even with overwrite).
+            rows.append(ImportRow(action="SKIP", name=p["name"], type=p["type"], ttl=p["ttl"], values=values,
+                                  reason="Weighted records already exist for this name and type"))
             continue
         exists = (p["name"], p["type"]) in existing
         if exists and not overwrite:
