@@ -229,3 +229,26 @@ def test_record_search_by_name_and_value(client):
 def test_accounts_are_isolated(client):
     other = client.get("/api/hosted-zones/Z0DOESNOTEXIST0000")
     assert other.status_code == 404 and other.json()["error"]["code"] == "NoSuchHostedZone"
+
+
+def test_other_account_cannot_see_or_change_zones(client):
+    from fastapi.testclient import TestClient
+    from app.db import connect
+    from app.main import app
+    from app.services import auth as auth_service
+
+    zid = zone_id_by_name(client, "example.com.")
+    conn = connect()
+    auth_service.ensure_user(conn, "other", "other-pass", "999999999999")
+    conn.close()
+    with TestClient(app) as other:
+        assert other.post("/api/auth/login", json={"username": "other", "password": "other-pass"}).status_code == 200
+        assert other.get("/api/hosted-zones").json()["total"] == 0
+        # Another account's zone looks exactly like a zone that doesn't exist (404, not 403).
+        assert other.get(f"/api/hosted-zones/{zid}").status_code == 404
+        assert other.get(f"/api/hosted-zones/{zid}/records").status_code == 404
+        assert other.patch(f"/api/hosted-zones/{zid}", json={"comment": "hacked"}).status_code == 404
+        assert other.post(f"/api/hosted-zones/{zid}/records",
+                          json={"name": "x", "type": "A", "values": ["192.0.2.1"]}).status_code == 404
+        assert other.delete(f"/api/hosted-zones/{zid}").status_code == 404
+    assert client.get(f"/api/hosted-zones/{zid}").json()["comment"] == "Production website and email"
