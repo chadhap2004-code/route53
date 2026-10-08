@@ -209,7 +209,7 @@ def delete_zone(conn: sqlite3.Connection, account_id: str, zone_id: str) -> None
             (zone_id, z["name"]),
         ).fetchone()[0]
         if extra:
-            # Exact Route53 behaviour and message.
+            # Same error code and wording as Route53, plus a count so the user knows what's left.
             raise ApiError(
                 400, "HostedZoneNotEmpty",
                 "The specified hosted zone contains non-required resource record sets and so cannot be deleted. "
