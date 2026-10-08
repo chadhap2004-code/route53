@@ -54,7 +54,7 @@ async def main():
         await pg.wait_for_selector("text=Records (4)")
         print("records created")
         # select www row, split panel, edit
-        await pg.locator("tr", has_text=f"www.{ZONE}.").locator("input[type=checkbox]").check()
+        await pg.locator("tr", has_text=f"www.{ZONE}").locator("input[type=checkbox]").check()
         await pg.wait_for_timeout(500)
         await pg.screenshot(path=f"{OUT}/09-split.png")
         await pg.click("button:has-text('Edit record') >> nth=0")
@@ -64,8 +64,8 @@ async def main():
         await pg.wait_for_selector("text=was successfully updated")
         print("record edited")
         # bulk delete two records
-        await pg.locator("tr", has_text=f"www.{ZONE}.").locator("input[type=checkbox]").check()
-        await pg.locator("tr", has_text=f"bad.{ZONE}.").locator("input[type=checkbox]").check()
+        await pg.locator("tr", has_text=f"www.{ZONE}").locator("input[type=checkbox]").check()
+        await pg.locator("tr", has_text=f"bad.{ZONE}").locator("input[type=checkbox]").check()
         await pg.click("button:has-text('Delete records')")
         await pg.wait_for_selector("text=Delete 2 records?")
         await pg.screenshot(path=f"{OUT}/10-delete-records.png")

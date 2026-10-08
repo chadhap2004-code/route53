@@ -5,7 +5,7 @@ import Button from "@cloudscape-design/components/button";
 import CopyToClipboard from "@cloudscape-design/components/copy-to-clipboard";
 import KeyValuePairs from "@cloudscape-design/components/key-value-pairs";
 import SpaceBetween from "@cloudscape-design/components/space-between";
-import { formatDate, routingLabel } from "@/lib/dns";
+import { displayName, formatDate, routingLabel } from "@/lib/dns";
 import type { RecordSet } from "@/lib/types";
 
 export default function RecordDetails({ record, onEdit }: { record: RecordSet; onEdit: () => void }) {
@@ -18,7 +18,7 @@ export default function RecordDetails({ record, onEdit }: { record: RecordSet; o
       <KeyValuePairs
         columns={1}
         items={[
-          { label: "Record name", value: <CopyToClipboard variant="inline" textToCopy={record.name} copyErrorText="Failed to copy" copySuccessText="Record name copied" /> },
+          { label: "Record name", value: <CopyToClipboard variant="inline" textToCopy={displayName(record.name)} copyErrorText="Failed to copy" copySuccessText="Record name copied" /> },
           { label: "Record type", value: record.type },
           {
             label: record.alias_target ? "Route traffic to" : "Value",

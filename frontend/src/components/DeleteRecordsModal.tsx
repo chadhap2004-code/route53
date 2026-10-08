@@ -7,6 +7,7 @@ import SpaceBetween from "@cloudscape-design/components/space-between";
 import Table from "@cloudscape-design/components/table";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, errorMessage } from "@/lib/api";
+import { displayName } from "@/lib/dns";
 import type { RecordSet } from "@/lib/types";
 import { useNotifications } from "./Notifications";
 
@@ -69,7 +70,7 @@ export default function DeleteRecordsModal({ zoneId, records, onDismiss, onDelet
           variant="embedded"
           items={records}
           columnDefinitions={[
-            { id: "name", header: "Record name", cell: (r) => r.name },
+            { id: "name", header: "Record name", cell: (r) => displayName(r.name) },
             { id: "type", header: "Type", cell: (r) => r.type },
             { id: "value", header: "Value/Route traffic to", cell: (r) => <span className="value-lines">{r.alias_target ? r.alias_target.dns_name : r.values.join("\n")}</span> },
           ]}

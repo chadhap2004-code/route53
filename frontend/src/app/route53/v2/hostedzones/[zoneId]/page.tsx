@@ -141,7 +141,7 @@ function RecordsTable({
   const filtered = !!(q || type.value || routing.value || alias.value);
 
   const columns: TableProps.ColumnDefinition<RecordSet>[] = [
-    { id: "name", header: "Record name", sortingField: "name", cell: (r) => r.name, isRowHeader: true },
+    { id: "name", header: "Record name", sortingField: "name", cell: (r) => displayName(r.name), isRowHeader: true },
     { id: "type", header: "Type", sortingField: "type", cell: (r) => r.type },
     { id: "routing", header: "Routing policy", sortingField: "routing_policy", cell: (r) => routingLabel(r.routing_policy) },
     { id: "differentiator", header: "Differentiator", cell: (r) => (r.routing_policy === "weighted" ? r.weight : "-") },
@@ -316,7 +316,7 @@ export default function HostedZoneDetailPage({ params }: { params: { zoneId: str
 
   const splitPanel = zone.data ? (
     <SplitPanel
-      header={one ? one.name : selected.length > 1 ? `${selected.length} records selected` : "Record details"}
+      header={one ? displayName(one.name) : selected.length > 1 ? `${selected.length} records selected` : "Record details"}
       closeBehavior="collapse"
       hidePreferencesButton
       i18nStrings={{

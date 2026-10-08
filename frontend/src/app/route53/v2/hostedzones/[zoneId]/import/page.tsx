@@ -173,7 +173,7 @@ export default function ImportZoneFilePage({ params }: { params: { zoneId: strin
                 }
                 columnDefinitions={[
                   { id: "action", header: "Action", cell: (r) => <Badge color={BADGE[r.action]}>{r.action}</Badge> },
-                  { id: "name", header: "Record name", cell: (r) => r.name },
+                  { id: "name", header: "Record name", cell: (r) => displayName(r.name) },
                   { id: "type", header: "Type", cell: (r) => r.type },
                   { id: "ttl", header: "TTL", cell: (r) => r.ttl ?? "-" },
                   { id: "values", header: "Value", cell: (r) => <span className="value-lines mono">{r.values.join("\n")}</span> },
