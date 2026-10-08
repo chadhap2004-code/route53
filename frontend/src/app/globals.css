@@ -95,3 +95,43 @@ kbd {
   padding: 14px 0 16px;
   border-top: 1px solid #424650;
 }
+
+/* Placeholder rows while a table refreshes (components/TableSkeleton.tsx), like the console. */
+.skeleton-bar {
+  display: block;
+  width: 85%;
+  height: 14px;
+  border-radius: 7px;
+  background: linear-gradient(90deg, #b4bac2 0%, #dfe2e6 50%, #b4bac2 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+.awsui-dark-mode .skeleton-bar {
+  background: linear-gradient(90deg, #414d5c 0%, #5f6b7a 50%, #414d5c 100%);
+  background-size: 200% 100%;
+}
+
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-bar {
+    animation: none;
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

@@ -26,10 +26,12 @@ import DeleteRecordsModal from "@/components/DeleteRecordsModal";
 import DeleteZoneModal from "@/components/DeleteZoneModal";
 import { useNotifications } from "@/components/Notifications";
 import RecordDetails from "@/components/RecordDetails";
+import { RefreshStatus, skeletonColumns, skeletonItems } from "@/components/TableSkeleton";
 import { api, errorMessage } from "@/lib/api";
 import { RECORD_TYPES, displayName, formatDate, routingLabel } from "@/lib/dns";
 import { EMPTY_QUERY, PROPERTY_FILTER_I18N, cleanQuery, tokenValue } from "@/lib/propertyFilter";
 import { readPref, writePref } from "@/lib/storage";
+import { useRefresh } from "@/lib/useRefresh";
 import type { HostedZone, RecordSet } from "@/lib/types";
 
 // Free text searches record names and values. Type and routing policy are filtered by the API;
@@ -135,7 +137,9 @@ function RecordsTable({
   });
 
   // Alias is a cheap client-side filter on the current page (the server already filtered the rest).
-  const items = (query.data?.items ?? []).filter((r) =>
+  const { refreshing, refresh } = useRefresh(query.refetch);
+  // On an error, show the error state (with Retry) instead of the last rows that loaded.
+  const items = (query.isError ? [] : query.data?.items ?? []).filter((r) =>
     alias === "Yes" ? !!r.alias_target : alias === "No" ? !r.alias_target : true,
   );
   const total = query.data?.total ?? 0;
@@ -166,13 +170,14 @@ function RecordsTable({
       <Table
         trackBy="id"
         variant="container"
-        items={items}
-        columnDefinitions={columns}
+        items={refreshing ? skeletonItems<RecordSet>(items.length) : items}
+        columnDefinitions={refreshing ? skeletonColumns(columns) : columns}
         columnDisplay={COLUMN_IDS.map((id) => ({ id, visible: visible.includes(id) }))}
         wrapLines={wrapLines}
         loading={query.isLoading}
         loadingText="Loading records"
         selectionType="multi"
+        isItemDisabled={() => refreshing}
         selectedItems={selected}
         onSelectionChange={(e) => setSelected(e.detail.selectedItems)}
         sortingColumn={{ sortingField: sorting.field }}
@@ -181,14 +186,14 @@ function RecordsTable({
         ariaLabels={{
           selectionGroupLabel: "Record selection",
           allItemsSelectionLabel: () => "Select all records",
-          itemSelectionLabel: (_, r) => `${r.name} ${r.type}`,
+          itemSelectionLabel: (_, r) => (refreshing ? "Loading" : `${r.name} ${r.type}`),
         }}
         header={
           <Header
             counter={query.data ? (selected.length ? `(${selected.length}/${total})` : `(${total})`) : undefined}
             actions={
               <SpaceBetween direction="horizontal" size="xs">
-                <Button iconName="refresh" ariaLabel="Refresh records" loading={query.isFetching} onClick={() => query.refetch()} />
+                <Button iconName="refresh" ariaLabel="Refresh records" disabled={refreshing} onClick={refresh} />
                 <Button disabled={!one} onClick={() => one && router.push(`/route53/v2/hostedzones/${zone.id}/records/${one.id}/edit`)}>
                   Edit record
                 </Button>
@@ -207,8 +212,10 @@ function RecordsTable({
         }
         filter={
           <div data-shortcut="search">
+            <RefreshStatus refreshing={refreshing} text="Loading records" />
             <PropertyFilter
               query={filterQuery}
+              disabled={refreshing}
               onChange={(e) => setFilterQuery(cleanQuery(e.detail, FILTERING_OPTIONS))}
               filteringProperties={FILTERING_PROPERTIES}
               filteringOptions={FILTERING_OPTIONS}
@@ -225,6 +232,7 @@ function RecordsTable({
           <Pagination
             currentPageIndex={page}
             pagesCount={Math.max(1, Math.ceil(total / pageSize))}
+            disabled={refreshing}
             onChange={(e) => setPage(e.detail.currentPageIndex)}
             ariaLabels={{ nextPageLabel: "Next page", previousPageLabel: "Previous page", pageLabel: (n) => `Page ${n}` }}
           />
@@ -259,7 +267,7 @@ function RecordsTable({
               <SpaceBetween size="xs">
                 <b>Couldn&apos;t load records</b>
                 <Box color="inherit">{errorMessage(query.error)}</Box>
-                <Button onClick={() => query.refetch()}>Retry</Button>
+                <Button onClick={refresh}>Retry</Button>
               </SpaceBetween>
             ) : (
               <SpaceBetween size="xs">

@@ -14,12 +14,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import ConsoleLayout, { route53Crumb, zonesCrumb } from "@/components/ConsoleLayout";
 import DeleteZoneModal from "@/components/DeleteZoneModal";
+import { RefreshStatus, skeletonColumns, skeletonItems } from "@/components/TableSkeleton";
 import { api, errorMessage } from "@/lib/api";
 import { displayName } from "@/lib/dns";
 import { EMPTY_QUERY, PROPERTY_FILTER_I18N, cleanQuery, queryWithText, tokenValue } from "@/lib/propertyFilter";
 import { readPref, writePref } from "@/lib/storage";
 import type { HostedZone } from "@/lib/types";
 import { useFollow } from "@/lib/useFollow";
+import { useRefresh } from "@/lib/useRefresh";
 
 // Free text searches the name, ID and description; Type is the one property the API filters on.
 const FILTERING_PROPERTIES = [{ key: "type", propertyLabel: "Type", groupValuesLabel: "Type values", operators: ["="] as const }];
@@ -60,7 +62,9 @@ function HostedZonesTable() {
     placeholderData: keepPreviousData, // keep showing the old page while the next one loads
   });
 
-  const items = zones.data?.items ?? [];
+  const { refreshing, refresh } = useRefresh(zones.refetch);
+  // On an error, show the error state (with Retry) instead of the last rows that loaded.
+  const items = zones.isError ? [] : zones.data?.items ?? [];
   const total = zones.data?.total ?? 0;
   const one = selected.length === 1 ? selected[0] : null;
 
@@ -89,11 +93,12 @@ function HostedZonesTable() {
         variant="full-page"
         stickyHeader
         trackBy="id"
-        items={items}
-        columnDefinitions={columns}
+        items={refreshing ? skeletonItems<HostedZone>(items.length) : items}
+        columnDefinitions={refreshing ? skeletonColumns(columns) : columns}
         loading={zones.isLoading}
         loadingText="Loading hosted zones"
         selectionType="single"
+        isItemDisabled={() => refreshing}
         selectedItems={selected}
         onSelectionChange={(e) => setSelected(e.detail.selectedItems)}
         sortingColumn={{ sortingField: sorting.field }}
@@ -103,7 +108,7 @@ function HostedZonesTable() {
         }
         ariaLabels={{
           selectionGroupLabel: "Hosted zone selection",
-          itemSelectionLabel: (_, z) => displayName(z.name),
+          itemSelectionLabel: (_, z) => (refreshing ? "Loading" : displayName(z.name)),
         }}
         header={
           <Header
@@ -112,7 +117,7 @@ function HostedZonesTable() {
             description="A hosted zone is a container for records, which include information about how you want to route traffic for a domain (such as example.com) and all of its subdomains."
             actions={
               <SpaceBetween direction="horizontal" size="xs">
-                <Button iconName="refresh" ariaLabel="Refresh hosted zones" loading={zones.isFetching} onClick={() => zones.refetch()} />
+                <Button iconName="refresh" ariaLabel="Refresh hosted zones" disabled={refreshing} onClick={refresh} />
                 <Button disabled={!one} onClick={() => one && router.push(`/route53/v2/hostedzones/${one.id}`)}>
                   View details
                 </Button>
@@ -133,8 +138,10 @@ function HostedZonesTable() {
         }
         filter={
           <div data-shortcut="search">
+            <RefreshStatus refreshing={refreshing} text="Loading hosted zones" />
             <PropertyFilter
               query={query}
+              disabled={refreshing}
               onChange={(e) => setQuery(cleanQuery(e.detail, FILTERING_OPTIONS))}
               filteringProperties={FILTERING_PROPERTIES}
               filteringOptions={FILTERING_OPTIONS}
@@ -151,6 +158,7 @@ function HostedZonesTable() {
           <Pagination
             currentPageIndex={page}
             pagesCount={Math.max(1, Math.ceil(total / pageSize))}
+            disabled={refreshing}
             onChange={(e) => setPage(e.detail.currentPageIndex)}
             ariaLabels={{ nextPageLabel: "Next page", previousPageLabel: "Previous page", pageLabel: (n) => `Page ${n}` }}
           />
@@ -178,7 +186,7 @@ function HostedZonesTable() {
               <SpaceBetween size="xs">
                 <b>Couldn&apos;t load hosted zones</b>
                 <Box color="inherit">{errorMessage(zones.error)}</Box>
-                <Button onClick={() => zones.refetch()}>Retry</Button>
+                <Button onClick={refresh}>Retry</Button>
               </SpaceBetween>
             ) : (
               <SpaceBetween size="xs">

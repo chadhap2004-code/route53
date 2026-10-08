@@ -14,16 +14,18 @@ import Input from "@cloudscape-design/components/input";
 import Link from "@cloudscape-design/components/link";
 import Pagination from "@cloudscape-design/components/pagination";
 import SpaceBetween from "@cloudscape-design/components/space-between";
-import Table from "@cloudscape-design/components/table";
+import Table, { type TableProps } from "@cloudscape-design/components/table";
 import TextFilter from "@cloudscape-design/components/text-filter";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import ConsoleLayout, { route53Crumb } from "@/components/ConsoleLayout";
 import { useNotifications } from "@/components/Notifications";
+import { RefreshStatus, skeletonColumns, skeletonItems } from "@/components/TableSkeleton";
 import { api } from "@/lib/api";
 import { readPref, writePref } from "@/lib/storage";
 import { useFollow } from "@/lib/useFollow";
+import { useRefresh } from "@/lib/useRefresh";
 
 const DOCS = "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Welcome.html";
 
@@ -34,6 +36,16 @@ const MORE_RESOURCES = [
   { text: "Forum - DNS and health checks", href: "https://repost.aws/search/content?globalSearch=Route%2053%20DNS%20health%20checks" },
   { text: "Forum - Domain name registration", href: "https://repost.aws/search/content?globalSearch=Route%2053%20domain%20registration" },
   { text: "Request a limit increase", href: "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSLimitations.html" },
+];
+
+interface NotificationRow {
+  id: string;
+}
+
+const NOTIFICATION_COLUMNS: TableProps.ColumnDefinition<NotificationRow>[] = [
+  { id: "resource", header: "Resource", cell: () => null },
+  { id: "status", header: "Status", cell: () => null },
+  { id: "updated", header: "Last update", cell: () => null, sortingField: "updated" },
 ];
 
 function Summary({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
@@ -55,6 +67,9 @@ export default function DashboardPage() {
   const follow = useFollow();
   const { notify } = useNotifications();
   const zones = useQuery({ queryKey: ["zones", "count"], queryFn: () => api.listZones({ page_size: 1 }) });
+  // Notifications are always empty in this clone; refresh refetches the zone count and shows the
+  // console's loading rows for a moment.
+  const { refreshing, refresh } = useRefresh(zones.refetch);
   const [domain, setDomain] = useState("");
   const [notificationFilter, setNotificationFilter] = useState("");
   // The console has no such banner, so it can be closed for good. Console pages render only in the
@@ -152,33 +167,34 @@ export default function DashboardPage() {
             </SpaceBetween>
           </Container>
 
-          <Table
+          <Table<NotificationRow>
             variant="container"
-            items={[]}
-            loading={zones.isFetching}
-            loadingText="Loading notifications"
-            columnDefinitions={[
-              { id: "resource", header: "Resource", cell: () => null },
-              { id: "status", header: "Status", cell: () => null },
-              { id: "updated", header: "Last update", cell: () => null, sortingField: "updated" },
-            ]}
+            trackBy="id"
+            items={refreshing ? skeletonItems<NotificationRow>(0) : []}
+            columnDefinitions={refreshing ? skeletonColumns(NOTIFICATION_COLUMNS) : NOTIFICATION_COLUMNS}
             header={
               <Header
                 variant="h2"
-                actions={<Button iconName="refresh" variant="icon" ariaLabel="Refresh notifications" onClick={() => zones.refetch()} />}
+                actions={
+                  <Button iconName="refresh" variant="icon" ariaLabel="Refresh notifications" disabled={refreshing} onClick={refresh} />
+                }
               >
                 Notifications
               </Header>
             }
             filter={
-              <TextFilter
-                filteringText={notificationFilter}
-                filteringPlaceholder="Find notifications"
-                filteringAriaLabel="Find notifications"
-                onChange={(e) => setNotificationFilter(e.detail.filteringText)}
-              />
+              <>
+                <RefreshStatus refreshing={refreshing} text="Loading notifications" />
+                <TextFilter
+                  filteringText={notificationFilter}
+                  filteringPlaceholder="Find notifications"
+                  filteringAriaLabel="Find notifications"
+                  disabled={refreshing}
+                  onChange={(e) => setNotificationFilter(e.detail.filteringText)}
+                />
+              </>
             }
-            pagination={<Pagination currentPageIndex={1} pagesCount={1} />}
+            pagination={<Pagination currentPageIndex={1} pagesCount={1} disabled={refreshing} />}
             empty={<Box textAlign="center" color="inherit">No notifications to display</Box>}
           />
 
