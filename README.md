@@ -56,7 +56,7 @@ I focused on two things:
 
 ## Running locally
 
-Requirements: Python 3.11+ and Node 18.18+ (Node 20 recommended).
+Requirements: Python 3.10+ (CI and Docker use 3.12) and Node 18.18+ (Node 20 recommended).
 
 ```bash
 # 1. Backend  (http://localhost:8000, API docs at /docs)
@@ -194,7 +194,7 @@ Error codes used: `NotAuthenticated`, `InvalidCredentials`, `NoSuchHostedZone`, 
 ## Testing
 
 ```bash
-cd backend && pytest -q          # 75 tests: validators, API rules, import/export round trip
+cd backend && pytest -q          # 83 tests: validators, API rules, import/export round trip
 cd frontend && npm run typecheck && npm run lint && npm run build
 ```
 
@@ -202,13 +202,14 @@ GitHub Actions (`.github/workflows/ci.yml`) runs both on every push.
 
 What the tests cover:
 - every value format, valid and invalid
-- auth (cookie flags, logout invalidation)
-- zone rules (auto NS/SOA, immutable name, not-empty delete, private VPC conflict)
+- auth (cookie flags, logout invalidation) and account isolation (a second account gets 404 on every zone route)
+- zone rules (auto NS/SOA, immutable name, not-empty delete, private VPC conflict, tag replacement)
 - record rules (CNAME, duplicates, weighted, alias, outside-zone)
-- change-batch atomicity, and a batch that sees its own earlier changes
+- change-batch atomicity (including a bulk delete that touches NS/SOA), and a batch that sees its own earlier changes
 - search that treats `_` literally
 - pagination
 - a BIND **import → export → re-import** round trip that compares the record sets
+- the demo reset endpoint
 
 ---
 
@@ -240,6 +241,8 @@ See [DEPLOYMENT.md](DEPLOYMENT.md). In short: the **backend runs on Railway** wi
 - Only Simple and Weighted routing. Latency, failover, geolocation and multivalue would extend `routing_policy` plus a few extra columns.
 - SQLite allows a single writer, so the backend runs one process. For several instances I'd move to Postgres. The SQL is mostly portable apart from the PRAGMAs and `BEGIN IMMEDIATE`.
 - TypeScript types are maintained by hand to match the Pydantic models. Generating them from the OpenAPI schema (`openapi-typescript`) would remove that drift risk.
+- The **Alias** filter on the records table works on the current page only (the other filters run on the server), so the counter shows the server total. An `alias` query parameter would fix it.
+- **Reset demo data** deletes the account's zones in one transaction and reseeds them in separate ones, so a failure halfway through would leave partial demo data. Running the reset again fixes it.
 - No frontend unit tests. A Playwright smoke test (`e2e/smoke_test.py`) drives the main flows end to end against a running stack; it is not wired into CI yet.
 
 ---
