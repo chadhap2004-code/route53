@@ -94,7 +94,7 @@ export default function CreateHostedZonePage() {
                   <FormField
                     label="Domain name"
                     description="This is the name of the domain that you want to route traffic for."
-                    constraintText="Valid characters: a-z, 0-9, ! &quot; # $ % & ' ( ) * + , - / : ; < = > ? @ [ \ ] ^ _ ` { | } . ~"
+                    constraintText="Valid characters: a-z, 0-9, hyphen (-), underscore (_) and period (.). Labels can't start or end with a hyphen."
                     errorText={submitted ? nameError : undefined}
                   >
                     <Input value={name} placeholder="example.com" onChange={(e) => setName(e.detail.value)} autoFocus />

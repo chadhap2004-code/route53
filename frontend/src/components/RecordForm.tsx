@@ -113,7 +113,7 @@ export default function RecordForm({ draft, zoneName, onChange, showErrors, mode
         <FormField
           label="Record name"
           description="Keep blank to create a record for the root domain."
-          constraintText="Valid characters: a-z, 0-9, ! &quot; # $ % & ' ( ) * + , - / : ; < = > ? @ [ \ ] ^ _ ` { | } . ~"
+          constraintText="Valid characters: a-z, 0-9, hyphen (-), underscore (_) and period (.). Use * only as the left-most label, e.g. *.dev."
         >
           <Grid gridDefinition={[{ colspan: 7 }, { colspan: 5 }]}>
             <Input
