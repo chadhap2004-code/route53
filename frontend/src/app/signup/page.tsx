@@ -1,6 +1,6 @@
 "use client";
 // Mocked sign-up in two steps, laid out like the console sign-up page: email and account name first,
-// then a password. Deliberately unbranded (neutral wordmark, "not affiliated" label). The new account gets
+// then a password. Deliberately unbranded (neutral wordmark, no AWS logo or wording). The new account gets
 // its own copy of the demo hosted zones and is signed in straight away (same HttpOnly session cookie).
 import { useQueryClient } from "@tanstack/react-query";
 import NextLink from "next/link";
@@ -96,7 +96,6 @@ export default function SignupPage() {
       <Cubes className={styles.cornerLeft} />
       <Cubes className={styles.cornerRight} />
       <div className={styles.wordmark}>Route 53 Console</div>
-      <div className={styles.demoLabel}>Demo — not affiliated with AWS</div>
 
       <form
         className={styles.plainCard}
@@ -202,7 +201,7 @@ export default function SignupPage() {
 
       <footer className={styles.footer}>
         <p>
-          Demo clone built for an assignment — not affiliated with AWS.{" "}
+          Built for an assignment.{" "}
           <a href="https://github.com/chadhap2004-code/route53" target="_blank" rel="noopener noreferrer">
             View the source
           </a>

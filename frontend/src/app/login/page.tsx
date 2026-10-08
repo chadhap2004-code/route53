@@ -1,6 +1,6 @@
 "use client";
 // Mocked sign-in in two steps, laid out like the console sign-in (identifier, then password).
-// Deliberately unbranded: a neutral wordmark and a "not affiliated" label, so the public demo can't be
+// Deliberately unbranded: a neutral wordmark and no AWS logo or wording, so the public demo can't be
 // mistaken for a real AWS sign-in page. The session itself is real: an HttpOnly cookie set by the API.
 import { useQueryClient } from "@tanstack/react-query";
 import NextLink from "next/link";
@@ -48,7 +48,6 @@ function LoginForm() {
   return (
     <div className={styles.page}>
       <div className={styles.wordmark}>Route 53 Console</div>
-      <div className={styles.demoLabel}>Demo — not affiliated with AWS</div>
 
       <form
         className={styles.card}
@@ -122,7 +121,7 @@ function LoginForm() {
 
       <footer className={styles.footer}>
         <p>
-          This is a demo clone built for an assignment. Accounts and DNS data are mocked and stored only in this demo.{" "}
+          Built for an assignment. Accounts and DNS data are mocked and stored only in this app.{" "}
           <a href="https://github.com/chadhap2004-code/route53" target="_blank" rel="noopener noreferrer">
             View the source
           </a>

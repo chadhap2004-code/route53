@@ -39,7 +39,7 @@ A working clone of the AWS Route 53 console for managing hosted zones and DNS re
 
 **Scope.** Hosted zones and DNS records are fully working. The **Dashboard** copies the console's layout (the hosted zone count is live, the rest is static) and **Health checks** shows the console's empty list. Traffic policies (a visual policy editor in the real console), Resolver, Profiles, Domains and DNS Firewall are "Coming soon" placeholders, as the brief allows.
 
-**Branding.** This is a demo clone, **not affiliated with AWS**. Console pages show a simple hand-drawn "aws" logo with a "Demo clone" badge, where the real console has its logo. The sign-in and sign-up pages carry no AWS logo or AWS wording, because a public page that imitates the AWS sign-in can be flagged as phishing and taken down.
+**Branding.** This project is **not affiliated with AWS** (the account menu says so too). Console pages show a simple hand-drawn "aws" logo where the real console has its logo. The sign-in and sign-up pages use a neutral "Route 53 Console" wordmark with no AWS logo or AWS wording, because a public page that imitates the AWS sign-in can be flagged as phishing and taken down.
 
 ![Hosted zones](docs/screenshots/hosted-zones.png)
 

@@ -1,7 +1,7 @@
 "use client";
 // Top navigation bar + global behaviour shared by all console pages.
-// Deliberately unbranded (no AWS logo / wording) because it's publicly hosted; the console UI below
-// it uses Cloudscape, the open-source design system the AWS console itself is built with.
+// Shows a hand-drawn logo like the console's; the sign-in and sign-up pages stay unbranded (D-40). The
+// console UI below it uses Cloudscape, the open-source design system the AWS console itself is built with.
 import Box from "@cloudscape-design/components/box";
 import Button from "@cloudscape-design/components/button";
 import Input from "@cloudscape-design/components/input";
@@ -16,14 +16,12 @@ import { ShortcutsModal, useGlobalShortcuts } from "./KeyboardShortcuts";
 import { useNotifications } from "./Notifications";
 import { useTheme } from "./Theme";
 
-// Simple hand-drawn console logo: "aws" text with a smile-style arrow, plus a grey "Demo clone" pill.
+// Simple hand-drawn console logo: "aws" text with a smile-style arrow.
 // Drawn here as SVG (nothing downloaded from amazon.com); sign-in and sign-up pages stay unbranded.
-const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="124" height="26" viewBox="0 0 124 26">
+const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="26" viewBox="0 0 36 26">
 <text x="1" y="15" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700" fill="#ffffff">aws</text>
 <path d="M2 19 Q17 25 31 18" stroke="#ff9900" stroke-width="2.4" fill="none" stroke-linecap="round"/>
 <path d="M27 16.5 L32 17.6 L29.6 22" stroke="#ff9900" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-<rect x="44" y="4" width="78" height="18" rx="9" fill="#414d5c"/>
-<text x="83" y="17" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#e9ebed">Demo clone</text>
 </svg>`;
 const LOGO_SRC = `data:image/svg+xml;utf8,${encodeURIComponent(LOGO_SVG)}`;
 
@@ -116,7 +114,7 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
     <>
       <div id="top-nav">
         <TopNavigation
-          identity={{ href: "/route53/v2/dashboard", logo: { src: LOGO_SRC, alt: "Route 53 console demo clone" } }}
+          identity={{ href: "/route53/v2/dashboard", logo: { src: LOGO_SRC, alt: "Route 53 console" } }}
           search={
             <div className="top-search-row">
               <Button variant="icon" iconSvg={appsIcon} ariaLabel="Services" onClick={() => notAvailable("The services menu")} />
@@ -164,7 +162,7 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
                 { id: "shortcuts", text: "Keyboard shortcuts" },
                 { id: "reset", text: "Reset demo data" },
                 { id: "signout", text: "Sign out" },
-                { id: "disclaimer", text: "Demo clone — not affiliated with AWS", disabled: true },
+                { id: "disclaimer", text: "Not affiliated with AWS", disabled: true },
               ],
             },
           ]}
