@@ -23,7 +23,7 @@ import { useDebounced } from "@/lib/useDebounced";
 import { useFollow } from "@/lib/useFollow";
 
 const TYPE_OPTIONS = [
-  { value: "", label: "All types" },
+  { value: "", label: "Type" },
   { value: "public", label: "Public" },
   { value: "private", label: "Private" },
 ];

@@ -34,12 +34,12 @@ import type { HostedZone, RecordSet } from "@/lib/types";
 import { useDebounced } from "@/lib/useDebounced";
 
 const ROUTING_FILTER = [
-  { value: "", label: "Any routing policy" },
+  { value: "", label: "Routing policy" },
   { value: "simple", label: "Simple" },
   { value: "weighted", label: "Weighted" },
 ];
 const ALIAS_FILTER = [
-  { value: "", label: "Any alias" },
+  { value: "", label: "Alias" },
   { value: "yes", label: "Alias: Yes" },
   { value: "no", label: "Alias: No" },
 ];

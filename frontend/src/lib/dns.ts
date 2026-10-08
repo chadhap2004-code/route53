@@ -14,7 +14,7 @@ export const RECORD_TYPES: { value: RecordType; label: string; placeholder: stri
 ];
 
 export const RECORD_TYPE_FILTER_OPTIONS = [
-  { value: "", label: "Any type" },
+  { value: "", label: "Type" },
   ...RECORD_TYPES.map((t) => ({ value: t.value, label: t.value })),
   { value: "SOA", label: "SOA" },
 ];
