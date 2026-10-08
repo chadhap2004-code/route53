@@ -10,7 +10,7 @@ import SpaceBetween from "@cloudscape-design/components/space-between";
 import TopNavigation from "@cloudscape-design/components/top-navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { api, errorMessage } from "@/lib/api";
 import { ShortcutsModal, useGlobalShortcuts } from "./KeyboardShortcuts";
 import { useNotifications } from "./Notifications";
@@ -30,6 +30,10 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
   const me = useQuery({ queryKey: ["me"], queryFn: api.me, staleTime: Infinity });
+  // Cloudscape's top bar and AppLayout pick a mobile or desktop layout from the window size, which the
+  // server can't know. Rendering only in the browser avoids a hydration mismatch on small screens.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const openHelp = useCallback(() => setHelp(true), []);
   useGlobalShortcuts(openHelp);
@@ -62,6 +66,8 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
       setConfirmReset(false);
     }
   }
+
+  if (!mounted) return null;
 
   return (
     <>
