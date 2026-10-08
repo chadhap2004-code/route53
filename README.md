@@ -8,7 +8,7 @@ A working clone of the AWS Route 53 console for managing hosted zones and DNS re
 
 ### Try these in 2 minutes
 
-1. Sign in, then open **example.test** (an empty zone, so you can't break anything).
+1. Sign in (or **Create account** for your own copy of the demo data), then open **example.test** (an empty zone, so you can't break anything).
 2. **Create record** → fill in `www`, value `192.0.2.1` → **Add another record** → fill in `api`, value `192.0.2.2` → **Create records**. A green notification shows the change ID.
 3. Try a bad value such as `999.1.1.1` in a record: the error appears in red inside the form, and nothing is saved.
 4. Tick both new records → **Delete records** → confirm in the modal.
@@ -68,7 +68,7 @@ I focused on two things:
 
 | Area | What works |
 |---|---|
-| **Auth (mocked)** | Login, logout, and a session that survives a refresh. Sessions live server-side (SQLite) behind an HttpOnly cookie. Middleware redirects to `/login` when there's no session. |
+| **Auth (mocked)** | Sign up, login, logout, and a session that survives a refresh. A new account gets its own 12-digit account ID and its own copy of the demo zones. Sessions live server-side (SQLite) behind an HttpOnly cookie. Middleware redirects to `/login` when there's no session. |
 | **Hosted zones** | List, search (name / ID / description), filter by type, sort, paginate, create (public or private with a VPC, plus tags), edit (description and tags; the name can't change), and delete (blocked while the zone still has records). |
 | **Records** | A, AAAA, CNAME, TXT, MX, NS, PTR, SRV and CAA, plus editing the zone's SOA/NS. List, search by name **or value**, filter by type / routing policy / alias, sort and paginate. Create several records at once ("Add another record"), edit, and delete one or many. |
 | **Routing** | Simple and Weighted (weight + record ID), plus Alias records. |
@@ -191,6 +191,7 @@ Interactive docs: `http://localhost:8000/docs`. Errors are always `{"error": {"c
 
 | Method | Path | Purpose |
 |---|---|---|
+| POST | `/api/auth/signup` | Create a user in a new account, seed the demo zones, and sign in (`409 UsernameTaken` if the name exists) |
 | POST | `/api/auth/login` | Sign in and set the HttpOnly session cookie |
 | POST | `/api/auth/logout` | Delete the session |
 | GET | `/api/auth/me` | Current user |
@@ -208,7 +209,7 @@ Interactive docs: `http://localhost:8000/docs`. Errors are always `{"error": {"c
 | POST | `/api/demo/reset` | Restore demo data for the signed-in account |
 | GET | `/api/health` | Health check |
 
-Error codes used: `NotAuthenticated`, `InvalidCredentials`, `NoSuchHostedZone`, `NoSuchRecordSet`, `InvalidDomainName`, `InvalidVPCId`, `ConflictingDomainExists`, `HostedZoneNotEmpty`, `InvalidChangeBatch`, `InvalidZoneFile`, `InvalidInput`.
+Error codes used: `NotAuthenticated`, `InvalidCredentials`, `UsernameTaken`, `NoSuchHostedZone`, `NoSuchRecordSet`, `InvalidDomainName`, `InvalidVPCId`, `ConflictingDomainExists`, `HostedZoneNotEmpty`, `InvalidChangeBatch`, `InvalidZoneFile`, `InvalidInput`.
 
 ---
 
@@ -230,7 +231,7 @@ Error codes used: `NotAuthenticated`, `InvalidCredentials`, `NoSuchHostedZone`, 
 ## Testing
 
 ```bash
-cd backend && pytest -q          # 83 tests: validators, API rules, import/export round trip
+cd backend && pytest -q          # 92 tests: validators, API rules, import/export round trip
 cd frontend && npm run typecheck && npm run lint && npm run build
 ```
 
@@ -238,7 +239,7 @@ GitHub Actions (`.github/workflows/ci.yml`) runs both on every push.
 
 What the tests cover:
 - every value format, valid and invalid
-- auth (cookie flags, logout invalidation) and account isolation (a second account gets 404 on every zone route)
+- auth (cookie flags, logout invalidation), sign-up (success, taken name, invalid input) and account isolation (another account gets 404 on every zone route)
 - zone rules (auto NS/SOA, immutable name, not-empty delete, private VPC conflict, tag replacement)
 - record rules (CNAME, duplicates, weighted, alias, outside-zone)
 - change-batch atomicity (including a bulk delete that touches NS/SOA), and a batch that sees its own earlier changes
@@ -286,6 +287,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md). In short: the **backend runs on Railway** wi
 - TypeScript types are maintained by hand to match the Pydantic models. Generating them from the OpenAPI schema (`openapi-typescript`) would remove that drift risk.
 - The **Alias** filter on the records table works on the current page only (the other filters run on the server), so the counter shows the server total. An `alias` query parameter would fix it.
 - **Reset demo data** deletes the account's zones in one transaction and reseeds them in separate ones, so a failure halfway through would leave partial demo data. Running the reset again fixes it.
+- Sign-up is open on the public demo with no rate limit, so anyone can create accounts (each gets about 50 demo rows). Fine for a demo; a real service would add rate limiting or email verification.
 - No frontend unit tests. A Playwright smoke test (`e2e/smoke_test.py`) drives the main flows end to end against a running stack; it is not wired into CI yet.
 
 ---
