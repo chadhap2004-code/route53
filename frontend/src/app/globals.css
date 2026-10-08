@@ -41,3 +41,25 @@ kbd {
   font-size: 12px;
   font-family: inherit;
 }
+
+/* Top-bar search: services icon, then the search box with the console's shortcut hint inside it. */
+.top-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.top-search {
+  position: relative;
+  flex: 1;
+}
+
+.top-search-hint {
+  position: absolute;
+  right: 36px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #8d99a8;
+  pointer-events: none;
+}

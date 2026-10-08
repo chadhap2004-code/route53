@@ -16,6 +16,31 @@ import { ShortcutsModal, useGlobalShortcuts } from "./KeyboardShortcuts";
 import { useNotifications } from "./Notifications";
 import { useTheme } from "./Theme";
 
+// Simple hand-drawn console logo: "aws" text with a smile-style arrow, plus a grey "Demo clone" pill.
+// Drawn here as SVG (nothing downloaded from amazon.com); sign-in and sign-up pages stay unbranded.
+const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="124" height="26" viewBox="0 0 124 26">
+<text x="1" y="15" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700" fill="#ffffff">aws</text>
+<path d="M2 19 Q17 25 31 18" stroke="#ff9900" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+<path d="M27 16.5 L32 17.6 L29.6 22" stroke="#ff9900" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="44" y="4" width="78" height="18" rx="9" fill="#414d5c"/>
+<text x="83" y="17" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#e9ebed">Demo clone</text>
+</svg>`;
+const LOGO_SRC = `data:image/svg+xml;utf8,${encodeURIComponent(LOGO_SVG)}`;
+
+const appsIcon = (
+  <svg viewBox="0 0 16 16" focusable="false" aria-hidden="true">
+    {[2, 8, 14].flatMap((x) => [2, 8, 14].map((y) => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.6" fill="currentColor" />))}
+  </svg>
+);
+
+const helpIcon = (
+  <svg viewBox="0 0 16 16" focusable="false" aria-hidden="true">
+    <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" strokeWidth="2" />
+    <path d="M6 6.2a2 2 0 1 1 2.6 1.9c-.4.2-.6.5-.6.9v.6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <circle cx="8" cy="11.8" r="1" fill="currentColor" />
+  </svg>
+);
+
 function formatAccount(id: string) {
   return id.replace(/(\d{4})(\d{4})(\d{4})/, "$1-$2-$3");
 }
@@ -37,6 +62,24 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
 
   const openHelp = useCallback(() => setHelp(true), []);
   useGlobalShortcuts(openHelp);
+
+  // Alt+S (Option+S on a Mac) focuses the top-bar search, like the console.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.altKey && e.code === "KeyS") {
+        e.preventDefault();
+        // The top bar also renders a hidden copy of the search (inside aria-hidden) to measure its layout.
+        const inputs = Array.from(document.querySelectorAll<HTMLInputElement>(".top-search input"));
+        inputs.find((input) => !input.closest('[aria-hidden="true"]'))?.focus();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  function notAvailable(feature: string) {
+    notify({ type: "info", content: `${feature} is outside the scope of this clone.` });
+  }
 
   async function onMenu(id: string) {
     if (id === "signout") {
@@ -73,24 +116,40 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
     <>
       <div id="top-nav">
         <TopNavigation
-          identity={{ href: "/route53/v2/hostedzones", title: "Route 53 Console" }}
+          identity={{ href: "/route53/v2/dashboard", logo: { src: LOGO_SRC, alt: "Route 53 console demo clone" } }}
           search={
-            <Input
-              type="search"
-              value={search}
-              placeholder="Search hosted zones"
-              ariaLabel="Search hosted zones"
-              onChange={(e) => setSearch(e.detail.value)}
-              onKeyDown={(e) => {
-                if (e.detail.key === "Enter") {
-                  router.push(`/route53/v2/hostedzones?q=${encodeURIComponent(search.trim())}`);
-                }
-              }}
-            />
+            <div className="top-search-row">
+              <Button variant="icon" iconSvg={appsIcon} ariaLabel="Services" onClick={() => notAvailable("The services menu")} />
+              <div className="top-search">
+                <Input
+                  type="search"
+                  value={search}
+                  placeholder="Search"
+                  ariaLabel="Search hosted zones"
+                  onChange={(e) => setSearch(e.detail.value)}
+                  onKeyDown={(e) => {
+                    if (e.detail.key === "Enter") {
+                      router.push(`/route53/v2/hostedzones?q=${encodeURIComponent(search.trim())}`);
+                    }
+                  }}
+                />
+                <span className="top-search-hint" aria-hidden="true">
+                  [Alt+S]
+                </span>
+              </div>
+            </div>
           }
           utilities={[
-            { type: "button", iconName: "keyboard", ariaLabel: "Keyboard shortcuts", title: "Keyboard shortcuts (?)", onClick: () => setHelp(true) },
-            { type: "button", text: "Global", title: "Route 53 is a global service" },
+            { type: "button", iconName: "command-prompt", ariaLabel: "CloudShell", title: "CloudShell", onClick: () => notAvailable("CloudShell") },
+            { type: "button", iconName: "notification", ariaLabel: "Notifications", title: "Notifications", onClick: () => notAvailable("Console notifications") },
+            { type: "button", iconSvg: helpIcon, ariaLabel: "Help and keyboard shortcuts", title: "Help and keyboard shortcuts (?)", onClick: () => setHelp(true) },
+            { type: "button", iconName: "settings", ariaLabel: "Settings", title: "Settings", onClick: () => notAvailable("Console settings") },
+            {
+              type: "menu-dropdown",
+              text: "Global",
+              title: "Route 53 is a global service",
+              items: [{ id: "global", text: "Route 53 is a global service and doesn't use regions", disabled: true }],
+            },
             {
               type: "menu-dropdown",
               text: me.data ? me.data.username : "…",
@@ -102,6 +161,7 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
                 { id: "shortcuts", text: "Keyboard shortcuts" },
                 { id: "reset", text: "Reset demo data" },
                 { id: "signout", text: "Sign out" },
+                { id: "disclaimer", text: "Demo clone — not affiliated with AWS", disabled: true },
               ],
             },
           ]}

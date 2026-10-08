@@ -11,6 +11,7 @@ import { useEffect, useRef } from "react";
 import { useTheme } from "./Theme";
 
 const SHORTCUTS = [
+  { keys: ["Alt+S"], action: "Focus the top-bar search" },
   { keys: ["/"], action: "Focus the search / filter box" },
   { keys: ["c"], action: "Create (hosted zone or record on the current page)" },
   { keys: ["g", "h"], action: "Go to Hosted zones" },
