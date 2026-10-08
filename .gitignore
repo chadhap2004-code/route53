@@ -19,12 +19,6 @@ node_modules/
 .DS_Store
 e2e/screenshots/
 
-# Private reference files (assignment brief, resume)
+# Private reference files
 private/*
 !private/README.md
-
-# Local working notes, kept out of the repo
-CLAUDE.md
-STATE.md
-DECISIONS.md
-docs/agent/
