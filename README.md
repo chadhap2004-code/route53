@@ -25,19 +25,19 @@ A working clone of the AWS Route 53 console for managing hosted zones and DNS re
 | **Modal:** delete hosted zone | Hosted zones → select a zone → **Delete** (or **Delete zone** on the zone page) | Type `delete` to confirm. Zones with records show a "still contains records" warning instead |
 | **Modal:** delete records | Zone page → tick one or more records → **Delete record(s)** | Lists the records. If you include the zone's own NS/SOA, the modal explains they can't be deleted |
 | **Modal:** reset demo data | **demo** (top right) → **Reset demo data** | Confirm with **Reset** |
-| **Modal:** keyboard shortcuts | Press <kbd>?</kbd>, or the keyboard icon in the top bar | Lists every shortcut |
+| **Modal:** keyboard shortcuts | Press <kbd>?</kbd>, or the **?** (help) icon in the top bar | Lists every shortcut |
 | **Notifications** (Flashbar) | Top of the page after any create, edit, delete or import | Green on success (record changes show the change ID, e.g. `C2682N5HXP0BZ4`); blue for info (try **Test record**). Validation errors show in red inside the form |
 | **Bonus:** import BIND zone file | Zone page → **Import zone file** | Upload or paste a file, **Preview** (nothing is saved), then **Import** |
 | **Bonus:** export BIND / JSON | Zone page → **Export** ▾ | BIND zone file or Route 53 JSON |
 | **Bonus:** dark mode | Press <kbd>t</kbd>, or **demo** → **Switch to dark mode** | Remembered per browser |
-| **Bonus:** keyboard shortcuts | <kbd>/</kbd> search · <kbd>c</kbd> create · <kbd>g</kbd> <kbd>h</kbd> hosted zones · <kbd>g</kbd> <kbd>d</kbd> dashboard · <kbd>t</kbd> theme · <kbd>?</kbd> help | Ignored while typing |
+| **Bonus:** keyboard shortcuts | <kbd>Alt</kbd>+<kbd>S</kbd> top-bar search · <kbd>/</kbd> table search · <kbd>c</kbd> create · <kbd>g</kbd> <kbd>h</kbd> hosted zones · <kbd>g</kbd> <kbd>d</kbd> dashboard · <kbd>t</kbd> theme · <kbd>?</kbd> help | Ignored while typing |
 | **Bonus:** bulk operations | Zone page → tick several records → **Delete records** | One atomic change batch: all are deleted or none. **Create record** → **Add another record** creates several at once |
 | Record details panel | Zone page → tick one record | Opens at the bottom; the gear switches it to the side |
 | CI/CD | [CI/CD](#cicd) | GitHub Actions on every push; Railway and Vercel deploy from `main` |
 
 **Scope.** Hosted zones and DNS records are fully working. Traffic policies (a visual policy editor in the real console), Resolver, Profiles, Health checks, Domains and DNS Firewall are "Coming soon" placeholders, as the brief allows.
 
-**No AWS branding on purpose.** The AWS logo and AWS-style sign-in are left out because a public page that imitates the AWS sign-in can be flagged as phishing and taken down. The rest of the top bar keeps the console layout: dark bar, search, region and account menu.
+**Branding.** This is a demo clone, **not affiliated with AWS**. Console pages show a simple hand-drawn "aws" logo with a "Demo clone" badge, where the real console has its logo. The sign-in and sign-up pages carry no AWS logo or AWS wording, because a public page that imitates the AWS sign-in can be flagged as phishing and taken down.
 
 ![Hosted zones](docs/screenshots/hosted-zones.png)
 
@@ -86,7 +86,7 @@ I focused on two things:
 
 </details>
 
-**Keyboard shortcuts:** `/` search · `c` create · `g h` hosted zones · `g d` dashboard · `t` dark mode · `?` help
+**Keyboard shortcuts:** `Alt+S` top-bar search · `/` table search · `c` create · `g h` hosted zones · `g d` dashboard · `t` dark mode · `?` help
 
 ---
 
