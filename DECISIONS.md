@@ -309,3 +309,21 @@ Add new entries at the bottom with the next number. Never delete an entry. If a 
 ### D-59: The alias filter stays client-side (D-16 reconfirmed)
 - Date: 2026-10-08 · Status: Accepted (known limitation)
 - Why: Fixing it needs a new API parameter; not worth an API change before the deadline. Listed in the README limitations.
+
+## UI review fixes (2026-10-08)
+
+### D-60: Record details split panel opens at the bottom
+- Date: 2026-10-08 · Status: Accepted
+- Decision: Default `splitPanelPreferences.position` is `bottom`, with a change handler so users can switch to side.
+- Why: At 1440px the side panel squeezed the records table to four columns and wrapped the header buttons and filters.
+
+### D-61: The console shell renders only in the browser
+- Date: 2026-10-08 · Status: Accepted
+- Decision: `ConsoleShell` returns nothing until it has mounted.
+- Why: Cloudscape's TopNavigation and AppLayout choose a mobile layout from the window size, which the server can't know, so every console page threw hydration errors at phone width. Every console page is client-rendered and fetches its data in the browser anyway, so nothing is lost.
+- Alternatives considered: `dynamic(..., { ssr: false })` per page (more files touched).
+
+### D-62: Record names are displayed without the trailing dot
+- Date: 2026-10-08 · Status: Accepted
+- Decision: The records table, split panel, delete modal and import preview show names through `displayName()`. Values keep their trailing dot, and the API still returns fully qualified names.
+- Why: Matches how the console shows record names. Display only; storage and the API contract are unchanged (D-19).
