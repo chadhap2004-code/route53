@@ -2,7 +2,6 @@ import ComingSoon from "@/components/ComingSoon";
 
 // Every Route 53 section outside the assignment scope lands here (Health checks, Traffic policies, Resolver, ...).
 const TITLES: Record<string, string> = {
-  healthchecks: "Health checks",
   profiles: "Profiles",
   cidrcollections: "CIDR collections",
   trafficpolicies: "Traffic policies",
