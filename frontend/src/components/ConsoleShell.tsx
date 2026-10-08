@@ -104,26 +104,28 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
       </div>
       {children}
       <ShortcutsModal visible={help} onDismiss={() => setHelp(false)} />
-      <Modal
-        visible={confirmReset}
-        onDismiss={() => setConfirmReset(false)}
-        header="Reset demo data?"
-        footer={
-          <Box float="right">
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button variant="link" onClick={() => setConfirmReset(false)}>
-                Cancel
-              </Button>
-              <Button variant="primary" loading={resetting} onClick={resetDemo}>
-                Reset
-              </Button>
-            </SpaceBetween>
-          </Box>
-        }
-      >
-        This deletes every hosted zone and record in this account and restores the original demo zones. You can&apos;t
-        undo this action.
-      </Modal>
+      {confirmReset && (
+        <Modal
+          visible
+          onDismiss={() => setConfirmReset(false)}
+          header="Reset demo data?"
+          footer={
+            <Box float="right">
+              <SpaceBetween direction="horizontal" size="xs">
+                <Button variant="link" onClick={() => setConfirmReset(false)}>
+                  Cancel
+                </Button>
+                <Button variant="primary" loading={resetting} onClick={resetDemo}>
+                  Reset
+                </Button>
+              </SpaceBetween>
+            </Box>
+          }
+        >
+          This deletes every hosted zone and record in this account and restores the original demo zones. You can&apos;t
+          undo this action.
+        </Modal>
+      )}
     </>
   );
 }

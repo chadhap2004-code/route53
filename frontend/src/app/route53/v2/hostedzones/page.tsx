@@ -136,7 +136,7 @@ function HostedZonesTable() {
                 filteringText={filter}
                 filteringPlaceholder="Filter hosted zones by name, ID or description"
                 filteringAriaLabel="Filter hosted zones"
-                countText={q ? `${total} match${total === 1 ? "" : "es"}` : undefined}
+                countText={q && !query.isError ? `${total} match${total === 1 ? "" : "es"}` : undefined}
                 onChange={(e) => setFilter(e.detail.filteringText)}
               />
             </div>

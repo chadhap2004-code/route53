@@ -210,7 +210,7 @@ function RecordsTable({
                 filteringText={filter}
                 filteringPlaceholder="Filter records by name or value"
                 filteringAriaLabel="Filter records"
-                countText={q ? `${total} match${total === 1 ? "" : "es"}` : undefined}
+                countText={q && !query.isError ? `${total} match${total === 1 ? "" : "es"}` : undefined}
                 onChange={(e) => setFilter(e.detail.filteringText)}
               />
             </div>
