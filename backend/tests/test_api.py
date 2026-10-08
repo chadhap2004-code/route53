@@ -227,6 +227,15 @@ def test_bulk_delete(client, zone):
     assert client.get(f"/api/hosted-zones/{zid}").json()["record_count"] == 2
 
 
+def test_bulk_delete_with_default_record_deletes_nothing(client, zone):
+    zid = zone["id"]
+    client.post(f"/api/hosted-zones/{zid}/records", json={"name": "h", "type": "A", "values": ["192.0.2.1"]})
+    ids = [r["id"] for r in client.get(f"/api/hosted-zones/{zid}/records").json()["items"]]  # NS, SOA and h
+    r = client.post(f"/api/hosted-zones/{zid}/records/bulk-delete", json={"record_ids": ids})
+    assert r.status_code == 400 and r.json()["error"]["code"] == "InvalidChangeBatch"
+    assert client.get(f"/api/hosted-zones/{zid}").json()["record_count"] == 3  # the A record survived too
+
+
 def test_record_search_by_name_and_value(client):
     zid = zone_id_by_name(client, "example.com.")
     by_value = client.get(f"/api/hosted-zones/{zid}/records", params={"q": "198.51.100.20"}).json()["items"]
