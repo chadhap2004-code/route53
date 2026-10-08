@@ -265,3 +265,47 @@ Add new entries at the bottom with the next number. Never delete an entry. If a 
 ### D-51: No AI/ML features
 - Date: 2026-10-08 · Status: Accepted
 - Why: A DNS console has no problem that ML solves. Adding one would look forced and add a failure mode.
+
+## Review fixes (2026-10-08, second session)
+
+### D-52: Stay on next@14.2.35 despite open advisories (accepted risk)
+- Date: 2026-10-08 · Status: Accepted (revisit after submission)
+- Decision: Keep `next@14.2.35`. `npm audit` reports advisories (including some on rewrites and middleware) whose only fix is `next@16`.
+- Why: Moving to Next 16 means React 19 and App Router changes the night before the deadline, which is riskier than the advisories for a demo. The demo has no real data: the accounts are mocked, the DNS data is made-up seed data using reserved example domains and IP ranges, and the backend URL is a fixed value set at build time, not something a user can change.
+- Alternatives considered: `npm audit fix --force` (installs next@16, breaking); upgrading to a newer 14.x (none fixes these).
+- Consequences: Upgrade after submission. Supersedes nothing; extends D-02.
+
+### D-53: Agent working notes stay local; DECISIONS.md is public
+- Date: 2026-10-08 · Status: Accepted
+- Decision: `CLAUDE.md`, `STATE.md` and `docs/agent/` are gitignored. `DECISIONS.md` is committed. Personal and resume details were removed from the docs before the first commit.
+- Why: DECISIONS.md documents the engineering reasoning. The other files are session notes for local work and contained personal details.
+- Consequences: Session state lives only on this machine.
+
+### D-54: Editing a record keeps its health check ID unless the request sends the field
+- Date: 2026-10-08 · Status: Accepted
+- Decision: `PUT /records/{id}` uses `model_fields_set`: if `health_check_id` isn't in the body, the stored value is kept; sending `null` clears it.
+- Why: The edit form never shows health checks, so a normal edit was silently wiping the value.
+- Alternatives considered: Making the whole PUT a partial update (bigger API change).
+
+### D-55: Zone-file import skips names that already have weighted records
+- Date: 2026-10-08 · Status: Accepted
+- Decision: An imported name+type that already has weighted records is a SKIP row ("Weighted records already exist for this name and type"), even with overwrite.
+- Why: A zone file has no routing policy, so it can't replace weighted records. Before, one such row made the whole import fail.
+
+### D-56: CAA values are unescaped before re-quoting
+- Date: 2026-10-08 · Status: Accepted
+- Decision: The quoted part of a CAA value goes through the same parser as TXT strings, then is quoted again.
+- Why: Normalising a stored value must give the same value. Before, `\"` gained an extra backslash on every save.
+
+### D-57: Destructive "Reset demo data" needs a confirmation modal; the reset itself stays non-atomic
+- Date: 2026-10-08 · Status: Accepted (known limitation)
+- Decision: The user menu opens a Cloudscape modal before calling `/api/demo/reset`. The reset still deletes in one transaction and reseeds in separate ones.
+- Why: Several reviewers may share the demo account, so a mis-click shouldn't wipe it. Making the reseed atomic would mean restructuring how services open transactions; running the reset again repairs a partial reset.
+
+### D-58: Table load errors show in the table's empty slot with a Retry button
+- Date: 2026-10-08 · Status: Accepted
+- Why: Before, a failed request showed "No hosted zones" / "No records", which is wrong. Reusing the empty slot keeps the change small.
+
+### D-59: The alias filter stays client-side (D-16 reconfirmed)
+- Date: 2026-10-08 · Status: Accepted (known limitation)
+- Why: Fixing it needs a new API parameter; not worth an API change before the deadline. Listed in the README limitations.
