@@ -1,4 +1,6 @@
 """API tests: auth, hosted zones, records and Route53 rules end to end."""
+import time
+
 from .conftest import zone_id_by_name
 
 
@@ -51,6 +53,12 @@ def test_zone_name_is_immutable(client, zone):
     r = client.patch(f"/api/hosted-zones/{zone['id']}", json={"comment": "new desc", "name": "other.example"})
     assert r.status_code == 200
     assert r.json()["name"] == "unit-test.example." and r.json()["comment"] == "new desc"
+
+
+def test_tag_only_edit_updates_timestamp(client, zone):
+    time.sleep(1.1)  # timestamps have one-second resolution
+    r = client.patch(f"/api/hosted-zones/{zone['id']}", json={"tags": [{"key": "env", "value": "dev"}]})
+    assert r.status_code == 200 and r.json()["updated_at"] > zone["updated_at"]
 
 
 def test_invalid_zone_name(client):

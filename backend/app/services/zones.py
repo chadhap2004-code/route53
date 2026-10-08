@@ -189,11 +189,11 @@ def update_zone(conn: sqlite3.Connection, account_id: str, zone_id: str, body: Z
         if len(keys) != len(set(keys)):
             raise ApiError(400, "InvalidInput", "Tag keys must be unique.")
     with transaction(conn):
+        conn.execute(
+            "UPDATE hosted_zones SET updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = ?", (zone_id,)
+        )
         if body.comment is not None:
-            conn.execute(
-                "UPDATE hosted_zones SET comment = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = ?",
-                (body.comment.strip(), zone_id),
-            )
+            conn.execute("UPDATE hosted_zones SET comment = ? WHERE id = ?", (body.comment.strip(), zone_id))
         if body.tags is not None:
             conn.execute("DELETE FROM zone_tags WHERE zone_id = ?", (zone_id,))
             conn.executemany("INSERT INTO zone_tags (zone_id, key, value) VALUES (?, ?, ?)",
