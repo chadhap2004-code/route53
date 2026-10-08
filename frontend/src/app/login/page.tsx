@@ -9,13 +9,18 @@ import Form from "@cloudscape-design/components/form";
 import FormField from "@cloudscape-design/components/form-field";
 import Header from "@cloudscape-design/components/header";
 import Input from "@cloudscape-design/components/input";
+import Link from "@cloudscape-design/components/link";
 import SpaceBetween from "@cloudscape-design/components/space-between";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { api, errorMessage } from "@/lib/api";
+import { useFollow } from "@/lib/useFollow";
 
 function LoginForm() {
   const router = useRouter();
+  const follow = useFollow();
+  const queryClient = useQueryClient();
   const params = useSearchParams();
   const [username, setUsername] = useState("demo");
   const [password, setPassword] = useState("route53-demo");
@@ -27,6 +32,7 @@ function LoginForm() {
     setError(null);
     try {
       await api.login(username, password);
+      queryClient.clear(); // drop anything cached for a previously signed-in user
       const next = params.get("next");
       // Only allow internal redirects (prevents open-redirects via ?next=https://evil.example).
       router.replace(next && next.startsWith("/route53/") ? next : "/route53/v2/hostedzones");
@@ -68,7 +74,13 @@ function LoginForm() {
             </Container>
           </Form>
         </form>
-        <Box textAlign="center" color="text-body-secondary" fontSize="body-s" padding={{ top: "m" }}>
+        <Box textAlign="center" padding={{ top: "m" }}>
+          New here?{" "}
+          <Link href="/signup" onFollow={follow}>
+            Create account
+          </Link>
+        </Box>
+        <Box textAlign="center" color="text-body-secondary" fontSize="body-s" padding={{ top: "s" }}>
           Next.js · FastAPI · SQLite
         </Box>
       </div>

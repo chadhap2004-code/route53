@@ -61,6 +61,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 export const api = {
   // auth
   login: (username: string, password: string) => request<User>("POST", "/auth/login", { username, password }),
+  signup: (username: string, password: string) => request<User>("POST", "/auth/signup", { username, password }),
   logout: () => request<void>("POST", "/auth/logout"),
   me: () => request<User>("GET", "/auth/me"),
 
