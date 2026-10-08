@@ -56,21 +56,24 @@ def login(conn: sqlite3.Connection, username: str, password: str) -> tuple[str, 
     return create_session(conn, user["id"]), user
 
 
-def signup(conn: sqlite3.Connection, username: str, password: str) -> sqlite3.Row:
-    """Create a user with its own new mocked AWS account. The router then seeds demo zones and logs it in."""
-    if conn.execute("SELECT 1 FROM users WHERE username = ?", (username,)).fetchone():
-        raise ApiError(409, "UsernameTaken", f"The username {username} is already taken. Choose another one.")
+def signup(conn: sqlite3.Connection, email: str, account_name: str, password: str) -> sqlite3.Row:
+    """Create a user (signing in with its email) in its own new mocked AWS account.
+
+    The router then seeds the demo zones and signs the user in.
+    """
+    if conn.execute("SELECT 1 FROM users WHERE username = ?", (email,)).fetchone():
+        raise ApiError(409, "EmailTaken", f"An account with the email {email} already exists. Sign in instead.")
     account_id = _new_account_id(conn)
     try:
         with transaction(conn):
             conn.execute(
-                "INSERT INTO users (username, password_hash, account_id) VALUES (?, ?, ?)",
-                (username, hash_password(password), account_id),
+                "INSERT INTO users (username, password_hash, account_id, account_name) VALUES (?, ?, ?, ?)",
+                (email, hash_password(password), account_id, account_name),
             )
     except sqlite3.IntegrityError:
-        # Two sign-ups with the same name at the same moment: the UNIQUE constraint decides.
-        raise ApiError(409, "UsernameTaken", f"The username {username} is already taken. Choose another one.") from None
-    return conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+        # Two sign-ups with the same email at the same moment: the UNIQUE constraint decides.
+        raise ApiError(409, "EmailTaken", f"An account with the email {email} already exists. Sign in instead.") from None
+    return conn.execute("SELECT * FROM users WHERE username = ?", (email,)).fetchone()
 
 
 def _new_account_id(conn: sqlite3.Connection) -> str:

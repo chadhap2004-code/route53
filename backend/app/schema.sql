@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     username      TEXT    NOT NULL UNIQUE,
     password_hash TEXT    NOT NULL,
     account_id    TEXT    NOT NULL,          -- mocked 12-digit AWS account id
+    account_name  TEXT    NOT NULL DEFAULT '', -- shown in the top bar; '' for the seeded demo user
     created_at    TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 

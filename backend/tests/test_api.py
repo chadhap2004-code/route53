@@ -44,41 +44,54 @@ def _signup_client():
     return TestClient(app)
 
 
+NEW_USER = {"email": "New.User@Example.com", "account_name": "My test account", "password": "password123"}
+
+
 def test_signup_creates_account_with_demo_zones_and_signs_in(client):
     with _signup_client() as new:
-        r = new.post("/api/auth/signup", json={"username": "new-user_1", "password": "password123"})
+        r = new.post("/api/auth/signup", json=NEW_USER)
         assert r.status_code == 201, r.text
         user = r.json()
-        assert user["username"] == "new-user_1" and len(user["account_id"]) == 12 and user["account_id"].isdigit()
+        assert user["username"] == "new.user@example.com"  # emails are stored lower-case
+        assert user["account_name"] == "My test account"
+        assert len(user["account_id"]) == 12 and user["account_id"].isdigit()
         assert user["account_id"] != client.get("/api/auth/me").json()["account_id"]
         cookie = r.headers["set-cookie"].lower()
         assert "httponly" in cookie and "samesite=lax" in cookie
-        assert new.get("/api/auth/me").json()["username"] == "new-user_1"  # already signed in
+        assert new.get("/api/auth/me").json()["account_name"] == "My test account"  # already signed in
         assert new.get("/api/hosted-zones").json()["total"] == 7  # seeded with the demo zones
-    with _signup_client() as again:  # and the password works for a normal login
-        assert again.post("/api/auth/login", json={"username": "new-user_1", "password": "password123"}).status_code == 200
 
 
-def test_signup_rejects_taken_username(client):
+def test_login_works_for_signed_up_account(client):
     with _signup_client() as new:
-        r = new.post("/api/auth/signup", json={"username": "demo", "password": "password123"})
-        assert r.status_code == 409 and r.json()["error"]["code"] == "UsernameTaken"
-        assert new.post("/api/auth/signup", json={"username": "twice", "password": "password123"}).status_code == 201
-        r = new.post("/api/auth/signup", json={"username": "twice", "password": "password123"})
-        assert r.status_code == 409 and r.json()["error"]["code"] == "UsernameTaken"
+        assert new.post("/api/auth/signup", json=NEW_USER).status_code == 201
+    with _signup_client() as again:
+        r = again.post("/api/auth/login", json={"username": "NEW.USER@example.com", "password": "password123"})
+        assert r.status_code == 200 and r.json()["account_name"] == "My test account"
+        bad = again.post("/api/auth/login", json={"username": "new.user@example.com", "password": "wrong-pass1"})
+        assert bad.status_code == 401
 
 
-@pytest.mark.parametrize("username,password", [
-    ("ab", "password123"),            # too short
-    ("a" * 33, "password123"),        # too long
-    ("Upper", "password123"),         # upper case
-    ("has space", "password123"),     # invalid character
-    ("bad.dot", "password123"),       # invalid character
-    ("valid_name", "short"),          # password under 8 characters
+def test_signup_rejects_existing_email(client):
+    with _signup_client() as new:
+        assert new.post("/api/auth/signup", json=NEW_USER).status_code == 201
+        r = new.post("/api/auth/signup", json={**NEW_USER, "email": "new.user@EXAMPLE.com"})  # same email, other case
+        assert r.status_code == 409 and r.json()["error"]["code"] == "EmailTaken"
+
+
+@pytest.mark.parametrize("change", [
+    {"email": "not-an-email"},
+    {"email": "missing@tld"},
+    {"account_name": ""},
+    {"account_name": "   "},
+    {"account_name": "x" * 51},
+    {"password": "short1"},           # under 8 characters
+    {"password": "onlyletters"},      # no number
+    {"password": "12345678"},         # no letter
 ])
-def test_signup_rejects_bad_input(client, username, password):
+def test_signup_rejects_bad_input(client, change):
     with _signup_client() as new:
-        r = new.post("/api/auth/signup", json={"username": username, "password": password})
+        r = new.post("/api/auth/signup", json={**NEW_USER, **change})
         assert r.status_code == 422 and r.json()["error"]["code"] == "InvalidInput"
         assert new.get("/api/auth/me").status_code == 401  # nothing was created or signed in
 
@@ -86,13 +99,29 @@ def test_signup_rejects_bad_input(client, username, password):
 def test_signed_up_account_cannot_see_other_accounts_zones(client):
     demo_zone = zone_id_by_name(client, "example.com.")
     with _signup_client() as new:
-        new.post("/api/auth/signup", json={"username": "isolated", "password": "password123"})
+        new.post("/api/auth/signup", json=NEW_USER)
         own = new.get("/api/hosted-zones", params={"page_size": 100}).json()["items"]
         assert demo_zone not in {z["id"] for z in own}  # same zone names, different zones
         assert new.get(f"/api/hosted-zones/{demo_zone}").status_code == 404
         assert new.delete(f"/api/hosted-zones/{demo_zone}").status_code == 404
         new_zone = next(z["id"] for z in own if z["name"] == "example.com.")
     assert client.get(f"/api/hosted-zones/{new_zone}").status_code == 404  # and the other way round
+
+
+def test_existing_database_gets_account_name_column(tmp_path):
+    """A database created before account_name existed (like the Railway volume) is upgraded on start."""
+    import sqlite3
+    from app.db import init_schema
+    old = sqlite3.connect(tmp_path / "old.db")
+    old.row_factory = sqlite3.Row
+    old.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL UNIQUE, "
+                "password_hash TEXT NOT NULL, account_id TEXT NOT NULL, created_at TEXT)")
+    old.execute("INSERT INTO users (username, password_hash, account_id) VALUES ('demo', 'x', '123456789012')")
+    init_schema(old)
+    init_schema(old)  # running it again is harmless
+    row = old.execute("SELECT username, account_name FROM users").fetchone()
+    assert (row["username"], row["account_name"]) == ("demo", "")
+    old.close()
 
 
 # ------------------------------------------------------------------ zones

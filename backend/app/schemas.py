@@ -6,9 +6,10 @@ database live in services/ so they produce Route53-style InvalidChangeBatch erro
 """
 from __future__ import annotations
 
+import re
 from typing import Generic, Literal, TypeVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 RecordType = Literal["A", "AAAA", "CNAME", "TXT", "MX", "NS", "PTR", "SRV", "CAA", "SOA"]
 RoutingPolicy = Literal["simple", "weighted"]
@@ -33,13 +34,39 @@ class LoginIn(BaseModel):
 
 
 class SignupIn(BaseModel):
-    username: str = Field(pattern=r"^[a-z0-9_-]{3,32}$", description="3-32 characters: a-z, 0-9, _ or -")
-    password: str = Field(min_length=8, max_length=128)
+    email: str = Field(max_length=254, description="Used as the sign-in name")
+    account_name: str = Field(min_length=1, max_length=50)
+    password: str = Field(min_length=8, max_length=128, description="At least 8 characters with a letter and a number")
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: str) -> str:
+        v = v.strip().lower()
+        # A simple shape check is enough for a mocked sign-up (no email is ever sent).
+        if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", v):
+            raise ValueError("Enter a valid email address, such as name@example.com")
+        return v
+
+    @field_validator("account_name")
+    @classmethod
+    def _account_name(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Account name is required")
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def _password(cls, v: str) -> str:
+        if not re.search(r"[A-Za-z]", v) or not re.search(r"\d", v):
+            raise ValueError("Password must contain at least one letter and one number")
+        return v
 
 
 class UserOut(BaseModel):
     username: str
     account_id: str
+    account_name: str = ""
 
 
 # --------------------------------------------------------------------------- zones

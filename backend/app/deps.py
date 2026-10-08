@@ -17,6 +17,7 @@ class CurrentUser:
     id: int
     username: str
     account_id: str
+    account_name: str
 
 
 def current_user(request: Request, db: sqlite3.Connection = Depends(get_db)) -> CurrentUser:
@@ -24,4 +25,5 @@ def current_user(request: Request, db: sqlite3.Connection = Depends(get_db)) -> 
     user = auth_service.user_for_token(db, token)
     if not user:
         raise ApiError(401, "NotAuthenticated", "Your session has expired. Sign in again.")
-    return CurrentUser(id=user["id"], username=user["username"], account_id=user["account_id"])
+    return CurrentUser(id=user["id"], username=user["username"], account_id=user["account_id"],
+                       account_name=user["account_name"])

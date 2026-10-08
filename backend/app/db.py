@@ -54,6 +54,11 @@ def transaction(conn: sqlite3.Connection) -> Iterator[sqlite3.Connection]:
 
 def init_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA_PATH.read_text())
+    # CREATE TABLE IF NOT EXISTS doesn't add new columns to an existing table, so older databases
+    # (like the one on the Railway volume) get users.account_name here. Safe to run on every start.
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(users)")}
+    if "account_name" not in columns:
+        conn.execute("ALTER TABLE users ADD COLUMN account_name TEXT NOT NULL DEFAULT ''")
 
 
 def get_db() -> Iterator[sqlite3.Connection]:

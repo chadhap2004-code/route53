@@ -28,18 +28,19 @@ def _set_session_cookie(response: Response, token: str) -> None:
 
 @router.post("/login", response_model=UserOut)
 def login(body: LoginIn, response: Response, db: sqlite3.Connection = Depends(get_db)) -> UserOut:
-    token, user = auth_service.login(db, body.username.strip(), body.password)
+    # Sign-in names are stored lower-case (emails are case-insensitive; the demo user is "demo").
+    token, user = auth_service.login(db, body.username.strip().lower(), body.password)
     _set_session_cookie(response, token)
-    return UserOut(username=user["username"], account_id=user["account_id"])
+    return UserOut(username=user["username"], account_id=user["account_id"], account_name=user["account_name"])
 
 
 @router.post("/signup", response_model=UserOut, status_code=201)
 def signup(body: SignupIn, response: Response, db: sqlite3.Connection = Depends(get_db)) -> UserOut:
-    """Mocked sign-up: a new user in a new account, seeded with the demo zones, then signed in."""
-    user = auth_service.signup(db, body.username, body.password)
+    """Mocked sign-up: a new user (email + account name) in a new account, seeded with the demo zones, then signed in."""
+    user = auth_service.signup(db, body.email, body.account_name, body.password)
     seed_account(db, user["account_id"], user["username"])
     _set_session_cookie(response, auth_service.create_session(db, user["id"]))
-    return UserOut(username=user["username"], account_id=user["account_id"])
+    return UserOut(username=user["username"], account_id=user["account_id"], account_name=user["account_name"])
 
 
 @router.post("/logout", status_code=204)
@@ -52,4 +53,4 @@ def logout(request: Request, response: Response, db: sqlite3.Connection = Depend
 
 @router.get("/me", response_model=UserOut)
 def me(user: CurrentUser = Depends(current_user)) -> UserOut:
-    return UserOut(username=user.username, account_id=user.account_id)
+    return UserOut(username=user.username, account_id=user.account_id, account_name=user.account_name)
