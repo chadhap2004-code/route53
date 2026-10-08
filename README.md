@@ -1,8 +1,43 @@
 # Route 53 Console Clone
 
+[![CI](https://github.com/chadhap2004-code/route53/actions/workflows/ci.yml/badge.svg)](https://github.com/chadhap2004-code/route53/actions/workflows/ci.yml)
+
 A working clone of the AWS Route 53 console for managing hosted zones and DNS records. It uses Next.js (TypeScript) for the UI, FastAPI for the API and SQLite for storage.
 
 **Live demo:** https://route53-nu.vercel.app · sign in with `demo` / `route53-demo` (pre-filled)
+
+### Try these in 2 minutes
+
+1. Sign in, then open **example.test** (an empty zone, so you can't break anything).
+2. **Create record** → fill in `www`, value `192.0.2.1` → **Add another record** → fill in `api`, value `192.0.2.2` → **Create records**. A green notification shows the change ID.
+3. Try a bad value such as `999.1.1.1` in a record: the error appears in red inside the form, and nothing is saved.
+4. Tick both new records → **Delete records** → confirm in the modal.
+5. **Import zone file** → **Insert sample** → **Preview** → **Import 6 records**.
+6. **Export** ▾ → **BIND zone file** (or **JSON**) to download the zone.
+7. Go back to **Hosted zones**, select **example.test** → **Delete**. The modal explains the zone still has records.
+8. Press <kbd>t</kbd> for dark mode and <kbd>?</kbd> for the keyboard shortcuts.
+9. When you're done: **demo** (top right) → **Reset demo data** → **Reset**.
+
+### Where to find each feature
+
+| Feature | Where | How |
+|---|---|---|
+| **Modal:** delete hosted zone | Hosted zones → select a zone → **Delete** (or **Delete zone** on the zone page) | Type `delete` to confirm. Zones with records show a "still contains records" warning instead |
+| **Modal:** delete records | Zone page → tick one or more records → **Delete record(s)** | Lists the records. If you include the zone's own NS/SOA, the modal explains they can't be deleted |
+| **Modal:** reset demo data | **demo** (top right) → **Reset demo data** | Confirm with **Reset** |
+| **Modal:** keyboard shortcuts | Press <kbd>?</kbd>, or the keyboard icon in the top bar | Lists every shortcut |
+| **Notifications** (Flashbar) | Top of the page after any create, edit, delete or import | Green on success (record changes show the change ID, e.g. `C2682N5HXP0BZ4`); blue for info (try **Test record**). Validation errors show in red inside the form |
+| **Bonus:** import BIND zone file | Zone page → **Import zone file** | Upload or paste a file, **Preview** (nothing is saved), then **Import** |
+| **Bonus:** export BIND / JSON | Zone page → **Export** ▾ | BIND zone file or Route 53 JSON |
+| **Bonus:** dark mode | Press <kbd>t</kbd>, or **demo** → **Switch to dark mode** | Remembered per browser |
+| **Bonus:** keyboard shortcuts | <kbd>/</kbd> search · <kbd>c</kbd> create · <kbd>g</kbd> <kbd>h</kbd> hosted zones · <kbd>g</kbd> <kbd>d</kbd> dashboard · <kbd>t</kbd> theme · <kbd>?</kbd> help | Ignored while typing |
+| **Bonus:** bulk operations | Zone page → tick several records → **Delete records** | One atomic change batch: all are deleted or none. **Create record** → **Add another record** creates several at once |
+| Record details panel | Zone page → tick one record | Opens at the bottom; the gear switches it to the side |
+| CI/CD | [CI/CD](#cicd) | GitHub Actions on every push; Railway and Vercel deploy from `main` |
+
+**Scope.** Hosted zones and DNS records are fully working. Traffic policies (a visual policy editor in the real console), Resolver, Profiles, Health checks, Domains and DNS Firewall are "Coming soon" placeholders, as the brief allows.
+
+**No AWS branding on purpose.** The AWS logo and AWS-style sign-in are left out because a public page that imitates the AWS sign-in can be flagged as phishing and taken down. The rest of the top bar keeps the console layout: dark bar, search, region and account menu.
 
 ![Hosted zones](docs/screenshots/hosted-zones.png)
 
@@ -22,6 +57,7 @@ I focused on two things:
 - [API overview](#api-overview)
 - [Route 53 rules implemented](#route-53-rules-implemented)
 - [Testing](#testing)
+- [CI/CD](#cicd)
 - [Deployment](#deployment)
 - [Design decisions](#design-decisions)
 - [Limitations and next steps](#limitations-and-next-steps)
@@ -210,6 +246,13 @@ What the tests cover:
 - pagination
 - a BIND **import → export → re-import** round trip that compares the record sets
 - the demo reset endpoint
+
+---
+
+## CI/CD
+
+- **CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push and pull request: backend `pytest`, then frontend `typecheck`, `lint` and `build`. The badge at the top shows the latest result.
+- **CD:** both services deploy automatically on every push to `main`. Railway rebuilds the backend from `backend/Dockerfile` (the SQLite file lives on a volume, so data survives redeploys) and Vercel rebuilds the frontend.
 
 ---
 
