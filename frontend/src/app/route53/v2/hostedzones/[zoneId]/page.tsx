@@ -438,7 +438,15 @@ export default function HostedZoneDetailPage({ params }: { params: { zoneId: str
         </ContentLayout>
       )}
       {deletingZone && zone.data && (
-        <DeleteZoneModal zone={zone.data} onDismiss={() => setDeletingZone(false)} onDeleted={() => router.push("/route53/v2/hostedzones")} />
+        <DeleteZoneModal
+          zone={zone.data}
+          onDismiss={() => setDeletingZone(false)}
+          onDeleted={() => router.push("/route53/v2/hostedzones")}
+          onViewRecords={() => {
+            setDeletingZone(false);
+            setTab("records");
+          }}
+        />
       )}
     </ConsoleLayout>
   );

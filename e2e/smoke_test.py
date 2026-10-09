@@ -91,7 +91,7 @@ async def main():
         print("record search ok")
         # delete zone blocked
         await pg.click("button:has-text('Delete zone')")
-        await pg.wait_for_selector("text=This hosted zone still contains records")
+        await pg.wait_for_selector("text=besides the default NS and SOA")
         await pg.screenshot(path=f"{OUT}/12-delete-zone.png")
         await pg.click("[role=dialog] button:has-text('Cancel')")
         # export

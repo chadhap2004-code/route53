@@ -14,12 +14,12 @@ A working clone of the AWS Route 53 console for managing hosted zones and DNS re
 4. Tick both new records → **Delete records** → confirm in the modal.
 5. **Import zone file** → **Insert sample** → **Preview** → **Import 6 records**.
 6. **Export** ▾ → **BIND zone file** (or **JSON**) to download the zone.
-7. Go back to **Hosted zones**, select **example.test** → **Delete**. The modal explains the zone still has records.
+7. Go back to **Hosted zones**, select **example.test** → **Delete**. It now has the records you added, so the modal explains they must be deleted first and offers **View records**. Delete them, and the zone deletes (as it would straight away before step 2).
 8. Open the **gear icon** (top bar) → **Visual mode** → **Dark** (or press <kbd>t</kbd>), and press <kbd>?</kbd> for the keyboard shortcuts.
 9. When you're done: **Demo account** (top right) → **Reset demo data** → **Reset**.
 
 > **Blocked on purpose (real Route 53 rules, not bugs)**
-> - **A hosted zone can only be deleted when it holds just its NS and SOA records.** Most demo zones have more records, so **Delete** is disabled and the modal says why (`HostedZoneNotEmpty`). A zone you just created, or the empty **example.test**, deletes straight away. To delete a demo zone, delete its other records first.
+> - **A hosted zone can only be deleted when it holds just its NS and SOA records.** Most demo zones have more records, so the delete modal says how many and offers **View records**; confirming anyway returns `HostedZoneNotEmpty`. A zone you just created, or the empty **example.test**, deletes straight away. To delete a demo zone, delete its other records first.
 > - **A zone's name can't be changed.** **Edit** changes only the description and tags; the name field is read-only.
 > - **The zone's own NS and SOA records can't be deleted.** You can edit them.
 > - **A record's name, type and routing policy can't be changed.** **Edit record** changes the value, TTL, weight and alias target; to rename a record, create a new one and delete the old one.
@@ -28,7 +28,9 @@ A working clone of the AWS Route 53 console for managing hosted zones and DNS re
 
 | Feature | Where | How |
 |---|---|---|
-| **Modal:** delete hosted zone | Hosted zones → select a zone → **Delete** (or **Delete zone** on the zone page) | Type `delete` to confirm. Zones with records show a "still contains records" warning instead |
+| **Modal:** delete hosted zone | Hosted zones → select a zone → **Delete** (or **Delete zone** on the zone page) | Type `delete` to confirm. Zones with records explain how many records to delete first, with a **View records** button |
+| Delete a hosted zone | Hosted zones → **example.test** → **Delete** | Try example.test (empty); zones with records must be emptied first, as in Route 53 |
+| Edit a hosted zone | Hosted zones → select any zone (demo zones included) → **Edit**, or **Edit hosted zone** on the zone page | Description and tags; the name is read-only, as in Route 53 |
 | **Modal:** delete records | Zone page → tick one or more records → **Delete record(s)** | Lists the records. If you include the zone's own NS/SOA, the modal explains they can't be deleted |
 | **Modal:** reset demo data | **Demo account** (top right) → **Reset demo data** (demo account only) | Confirm with **Reset** |
 | **Modal:** keyboard shortcuts | Press <kbd>?</kbd>, or the **?** (help) icon in the top bar | Lists every shortcut |

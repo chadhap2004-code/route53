@@ -265,6 +265,36 @@ def test_delete_zone_blocked_when_not_empty(client, zone):
     assert client.get(f"/api/hosted-zones/{zid}").status_code == 404
 
 
+def test_seeded_zone_can_be_edited(client):
+    zid = zone_id_by_name(client, "example.com.")
+    r = client.patch(f"/api/hosted-zones/{zid}", json={"comment": "Edited", "tags": [{"key": "owner", "value": "me"}]})
+    assert r.status_code == 200, r.text
+    z = client.get(f"/api/hosted-zones/{zid}").json()
+    assert z["comment"] == "Edited" and z["tags"] == [{"key": "owner", "value": "me"}]
+    assert z["name"] == "example.com."
+
+
+def test_seeded_zones_follow_the_same_delete_rule(client):
+    # example.test is seeded with only NS and SOA, so it deletes straight away.
+    empty = zone_id_by_name(client, "example.test.")
+    assert client.delete(f"/api/hosted-zones/{empty}").status_code == 204
+
+    zid = zone_id_by_name(client, "example.org.")
+    r = client.delete(f"/api/hosted-zones/{zid}")
+    assert r.status_code == 400 and r.json()["error"]["code"] == "HostedZoneNotEmpty"
+    records = client.get(f"/api/hosted-zones/{zid}/records", params={"page_size": 100}).json()["items"]
+    ids = [x["id"] for x in records if x["type"] not in ("NS", "SOA")]
+    assert client.post(f"/api/hosted-zones/{zid}/records/bulk-delete", json={"record_ids": ids}).status_code == 200
+    assert client.delete(f"/api/hosted-zones/{zid}").status_code == 204
+
+
+def test_reset_recreates_empty_example_test(client):
+    client.delete(f"/api/hosted-zones/{zone_id_by_name(client, 'example.test.')}")
+    assert client.post("/api/demo/reset").status_code == 204
+    zid = zone_id_by_name(client, "example.test.")
+    assert client.get(f"/api/hosted-zones/{zid}").json()["record_count"] == 2  # NS + SOA
+
+
 # ------------------------------------------------------------------ records
 
 def test_record_crud(client, zone):

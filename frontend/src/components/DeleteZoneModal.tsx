@@ -1,6 +1,7 @@
 "use client";
 // Delete confirmation that mirrors the console: type "delete" to confirm, and a clear explanation
-// when the zone still has records (the backend enforces HostedZoneNotEmpty either way).
+// when the zone still has records (the backend enforces HostedZoneNotEmpty either way). That rule is
+// the same for every zone, seeded demo zones included.
 import Alert from "@cloudscape-design/components/alert";
 import Box from "@cloudscape-design/components/box";
 import Button from "@cloudscape-design/components/button";
@@ -19,9 +20,10 @@ interface Props {
   zone: HostedZone;
   onDismiss: () => void;
   onDeleted: () => void;
+  onViewRecords: () => void; // opens the zone's Records tab
 }
 
-export default function DeleteZoneModal({ zone, onDismiss, onDeleted }: Props) {
+export default function DeleteZoneModal({ zone, onDismiss, onDeleted, onViewRecords }: Props) {
   const [confirm, setConfirm] = useState("");
   const qc = useQueryClient();
   const { notify } = useNotifications();
@@ -49,7 +51,7 @@ export default function DeleteZoneModal({ zone, onDismiss, onDeleted }: Props) {
             </Button>
             <Button
               variant="primary"
-              disabled={confirm !== "delete" || extra > 0}
+              disabled={confirm !== "delete"}
               loading={mutation.isPending}
               onClick={() => mutation.mutate()}
             >
@@ -64,9 +66,13 @@ export default function DeleteZoneModal({ zone, onDismiss, onDeleted }: Props) {
           Permanently delete hosted zone <b>{displayName(zone.name)}</b> ({zone.id})? You can&apos;t undo this action.
         </Box>
         {extra > 0 && (
-          <Alert type="warning" header="This hosted zone still contains records">
-            You can delete a hosted zone only when it contains just the default NS and SOA records. Delete the other{" "}
-            {extra} record{extra === 1 ? "" : "s"} first.
+          <Alert
+            type="warning"
+            header="This hosted zone isn't empty"
+            action={<Button onClick={onViewRecords}>View records</Button>}
+          >
+            This hosted zone contains {extra} record{extra === 1 ? "" : "s"} besides the default NS and SOA. Delete those
+            records first, then delete the zone.
           </Alert>
         )}
         {mutation.isError && <Alert type="error">{errorMessage(mutation.error)}</Alert>}
@@ -74,7 +80,6 @@ export default function DeleteZoneModal({ zone, onDismiss, onDeleted }: Props) {
           <Input
             value={confirm}
             placeholder="delete"
-            disabled={extra > 0}
             onChange={(e) => setConfirm(e.detail.value)}
             ariaLabel="Type delete to confirm"
           />

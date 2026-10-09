@@ -212,6 +212,7 @@ function HostedZonesTable() {
             setDeleting(null);
             setSelected([]);
           }}
+          onViewRecords={() => router.push(`/route53/v2/hostedzones/${deleting.id}`)}
         />
       )}
     </>
