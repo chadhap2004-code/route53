@@ -18,6 +18,12 @@ A working clone of the AWS Route 53 console for managing hosted zones and DNS re
 8. Open the **gear icon** (top bar) → **Visual mode** → **Dark** (or press <kbd>t</kbd>), and press <kbd>?</kbd> for the keyboard shortcuts.
 9. When you're done: **Demo account** (top right) → **Reset demo data** → **Reset**.
 
+> **Blocked on purpose (real Route 53 rules, not bugs)**
+> - **A hosted zone can only be deleted when it holds just its NS and SOA records.** Most demo zones have more records, so **Delete** is disabled and the modal says why (`HostedZoneNotEmpty`). A zone you just created, or the empty **example.test**, deletes straight away. To delete a demo zone, delete its other records first.
+> - **A zone's name can't be changed.** **Edit** changes only the description and tags; the name field is read-only.
+> - **The zone's own NS and SOA records can't be deleted.** You can edit them.
+> - **A record's name, type and routing policy can't be changed.** **Edit record** changes the value, TTL, weight and alias target; to rename a record, create a new one and delete the old one.
+
 ### Where to find each feature
 
 | Feature | Where | How |
