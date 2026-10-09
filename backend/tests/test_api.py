@@ -82,6 +82,14 @@ def test_login_works_for_signed_up_account(client):
         assert bad.status_code == 401
 
 
+
+def test_login_works_for_long_signup_email(client):
+    email = "a" * 60 + "@" + "b" * 60 + ".example.com"  # longer than the old 64-character sign-in limit
+    with _signup_client() as new:
+        assert new.post("/api/auth/signup", json={**NEW_USER, "email": email}).status_code == 201
+    with _signup_client() as again:
+        assert again.post("/api/auth/login", json={"username": email, "password": "password123"}).status_code == 200
+
 def test_signup_rejects_existing_email(client):
     with _signup_client() as new:
         assert new.post("/api/auth/signup", json=NEW_USER).status_code == 201

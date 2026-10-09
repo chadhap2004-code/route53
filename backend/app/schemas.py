@@ -29,7 +29,7 @@ class Page(BaseModel, Generic[T]):
 # --------------------------------------------------------------------------- auth
 
 class LoginIn(BaseModel):
-    username: str = Field(min_length=1, max_length=64)
+    username: str = Field(min_length=1, max_length=254)  # same limit as the sign-up email
     password: str = Field(min_length=1, max_length=128)
 
 
