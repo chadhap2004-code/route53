@@ -64,6 +64,16 @@ kbd {
   pointer-events: none;
 }
 
+/* Account name on the top-bar menu button (ConsoleShell). Long emails end in "..." instead of wrapping. */
+.account-menu-name {
+  display: inline-block;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
 /* "Current user settings" panel under the gear icon (components/SettingsPanel.tsx). The colours match the
    top bar's dropdowns; the Cloudscape components inside get theirs from awsui-context-top-navigation. */
 .settings-panel {

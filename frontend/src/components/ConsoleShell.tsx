@@ -71,6 +71,7 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
   const me = useQuery({ queryKey: ["me"], queryFn: api.me, staleTime: Infinity });
+  const userName = me.data ? me.data.account_name || me.data.username : "";
   // Cloudscape's top bar and AppLayout pick a mobile or desktop layout from the window size, which the
   // server can't know. Rendering only in the browser avoids a hydration mismatch on small screens.
   const [mounted, setMounted] = useState(false);
@@ -172,8 +173,18 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
             },
             {
               type: "menu-dropdown",
-              // "<account name or user> @ 1234-5678-9012" on the bar; the user (bold) and account ID head the menu.
-              text: me.data ? `${me.data.account_name || me.data.username} @ ${formatAccount(me.data.account_id)}` : "…",
+              // Only the account name (or the sign-in name) on the bar, like the console; the account ID is the
+              // first item in the menu. Cloudscape types `text` as a string but renders it as a React child, so a
+              // span lets a long email end in "..." with the full name on hover.
+              text: (me.data ? (
+                <span className="account-menu-name" title={userName}>
+                  {userName}
+                </span>
+              ) : (
+                "…"
+              )) as unknown as string,
+              ariaLabel: me.data ? `Account menu, ${userName}` : "Account menu",
+              title: userName, // dropdown header when the bar is too narrow for the text (phones)
               iconName: "user-profile",
               onItemClick: (e) => onMenu(e.detail.id),
               items: [

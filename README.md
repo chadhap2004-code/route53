@@ -41,7 +41,7 @@ A working clone of the AWS Route 53 console for managing hosted zones and DNS re
 | **Bonus:** keyboard shortcuts | <kbd>Alt</kbd>+<kbd>S</kbd> top-bar search · <kbd>/</kbd> table search · <kbd>c</kbd> create · <kbd>g</kbd> <kbd>h</kbd> hosted zones · <kbd>g</kbd> <kbd>d</kbd> dashboard · <kbd>t</kbd> theme · <kbd>?</kbd> help | Ignored while typing |
 | **Bonus:** bulk operations | Zone page → tick several records → **Delete records** | One atomic change batch: all are deleted or none. **Create record** → **Add another record** creates several at once |
 | Record details panel | Zone page → tick one record | Opens at the bottom; the gear switches it to the side |
-| Account menu | Top right (**Demo account @ 1234-5678-9012**) | Account ID, Organization / Billing / Security credentials (coming soon), Export all hosted zones, Keyboard shortcuts, Visual mode, Reset demo data, Sign out |
+| Account menu | Top right (**Demo account**: the account name, or the sign-in email if there is none; long names end in "…" and show in full on hover) | Account ID (first item), Organization / Billing / Security credentials (coming soon), Export all hosted zones, Keyboard shortcuts, Visual mode, Reset demo data, Sign out |
 | Dashboard | Left nav → **Dashboard** | Same sections as the console. The "Try the bonus features" tip can be dismissed |
 | Sign-up | Sign-in page → **New here? Create account** | Email and account name, then a password. The new account starts empty and only ever sees its own zones |
 | CI/CD | [CI/CD](#cicd) | GitHub Actions on every push; Railway and Vercel deploy from `main` |
